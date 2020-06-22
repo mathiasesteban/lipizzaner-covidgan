@@ -1,6 +1,7 @@
 from abc import abstractmethod, ABC
 
 import copy
+from math import sqrt
 
 import numpy as np
 import torch
@@ -154,7 +155,77 @@ class DiscriminatorNet(CompetetiveNet):
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
 
-        outputs = self.net(input).view(-1)
+        input = input.view(-1, 1, 28, 28)
+        outputs = self.net(input) #.view(-1)
+        d_loss_real = self.loss_function(outputs, real_labels)
+
+        # Compute loss using fake images
+        # First term of the loss is always zero since fake_labels == 0
+        z = noise(batch_size, self.data_size)
+        fake_images = opponent.net(z)
+        outputs = self.net(fake_images).view(-1)
+        d_loss_fake = self.loss_function(outputs, fake_labels)
+
+        return d_loss_real + d_loss_fake, None
+
+
+class GeneratorNetCovid(CompetetiveNet):
+    def __init__(self, loss_function, net, data_size, optimize_bias=True, image_size=(28,28)):
+        self.image_size = image_size
+        GeneratorNet.__init__(self, loss_function, net, data_size, optimize_bias)
+
+    @property
+    def name(self):
+        return 'GeneratorCovid'
+
+    @property
+    def default_fitness(self):
+        return float('-inf')
+
+    def compute_loss_against(self, opponent, input):
+        batch_size = input.size(0)
+
+        real_labels = to_pytorch_variable(torch.ones(batch_size))
+
+        z = noise(batch_size, self.data_size)
+
+        fake_images = self.net(z)
+        outputs = opponent.net(fake_images).view(-1)
+
+        return self.loss_function(outputs, real_labels), fake_images
+
+
+
+class DiscriminatorNetCovid(CompetetiveNet):
+    def __init__(self, loss_function, net, data_size, optimize_bias=True, image_size=(28, 28)):
+        self.image_size = image_size
+        DiscriminatorNet.__init__(self, loss_function, net, data_size, optimize_bias)
+
+    @property
+    def name(self):
+        return 'DiscriminatorCovid'
+
+    @property
+    def default_fitness(self):
+        return float('-inf')
+
+    def compute_loss_against(self, opponent, input):
+
+        # If HeuristicLoss is applied in the Generator, the Discriminator applies BCELoss
+        if self.loss_function.__class__.__name__ == 'MustangsLoss':
+            if 'HeuristicLoss' in self.loss_function.get_applied_loss_name():
+                self.loss_function.set_applied_loss(torch.nn.BCELoss())
+
+        # Compute loss using real images
+        # Second term of the loss is always zero since real_labels == 1
+        batch_size = input.size(0)
+
+        real_labels = to_pytorch_variable(torch.ones(batch_size))
+        fake_labels = to_pytorch_variable(torch.zeros(batch_size))
+
+        x, y = self.image_size
+        input = input.view(-1, 1, x, y)
+        outputs = self.net(input) #.view(-1)
         d_loss_real = self.loss_function(outputs, real_labels)
 
         # Compute loss using fake images

@@ -31,6 +31,7 @@ class ConfigurationContainer:
         'parallel_ea': ('training.ea.parallel_ea_trainer', 'ParallelEATrainer'),
         'four_layer_perceptron': ('networks.network_factory', 'FourLayerPerceptronFactory'),
         'convolutional': ('networks.network_factory', 'ConvolutionalNetworkFactory'),
+        'convolutional_mnist28x28': ('networks.network_factory', 'ConvolutionalMNIST28x28'),
         'mooc_net': ('networks.mooc_net', 'MOOCFourLayerPerceptronFactory'),
         'circular_problem_perceptron': ('networks.network_factory', 'CircularProblemFactory'),
         'rnn': ('networks.network_factory', 'RNNFactory'),
