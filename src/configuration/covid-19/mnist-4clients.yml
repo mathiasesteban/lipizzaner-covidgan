@@ -17,7 +17,7 @@ trainer:
     enable_selection: True
     score:
       enabled: True
-      type: fid
+      type: inception_score
       score_sample_size: 1000
       cuda: False
     fitness:

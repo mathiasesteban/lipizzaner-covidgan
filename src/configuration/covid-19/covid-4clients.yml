@@ -36,4 +36,4 @@ master:
   calculate_score: True
   score_sample_size: 50000
   cuda: False
-general: !include general-1client.yml
+general: !include general-4clients.yml
