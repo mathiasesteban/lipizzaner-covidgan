@@ -18,16 +18,16 @@ trainer:
     score:
       enabled: True
       type: inception_score
-      score_sample_size: 1000
+      score_sample_size: 50
       cuda: False
     fitness:
       fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
 dataloader:
-  dataset_name: mnist
+  dataset_name: covid
   use_batch: True
-  batch_size: 100
-  n_batches: 0
+  batch_size: 10
+  n_batches: 6
   shuffle: True
 network:
   name: four_layer_perceptron

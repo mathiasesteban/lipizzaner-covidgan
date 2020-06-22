@@ -37,8 +37,10 @@ class InceptionCalculator(ScoreCalculator):
         Results will be more accurate, but this takes more time.
         :param imgs: Torch dataset of numpy images normalized in the range [-1, 1] (Could be both grey or RGB images)
         """
+
         cc = ConfigurationContainer.instance()
         length = len(imgs)
+
         splits = 10 if exact else 3
 
         assert self.batch_size > 0
@@ -59,7 +61,8 @@ class InceptionCalculator(ScoreCalculator):
 
         for i, batch in enumerate(dataloader, 0):
             batch = batch.type(self.dtype)
-            if cc.settings['dataloader']['dataset_name'] == 'mnist':
+            if cc.settings['dataloader']['dataset_name'] == 'mnist' \
+                    or cc.settings['dataloader']['dataset_name'] == 'covid':
                 rgb_batch = self._convert_grey_to_square_rgb(batch)
             else:
                 rgb_batch = batch
@@ -85,13 +88,21 @@ class InceptionCalculator(ScoreCalculator):
 
         return np.mean(split_scores), np.std(split_scores)
 
+    # We should see here how to make a better one for bigger covid images
     def _convert_grey_to_square_rgb(self, grey_img):
         # grey_img here is of shape(batch_size, 784)
         cc = ConfigurationContainer.instance()
         # This function is only available for mnist dataset
-        assert cc.settings['dataloader']['dataset_name'] == 'mnist'
-        # Pad the same data in all 3 dimensions
-        return grey_img.reshape(-1, 28, 28).unsqueeze(1).repeat(1, 3, 1, 1)
+        if cc.settings['dataloader']['dataset_name'] == 'mnist':
+            assert cc.settings['dataloader']['dataset_name'] == 'mnist'
+            # Pad the same data in all 3 dimensions
+            return grey_img.reshape(-1, 28, 28).unsqueeze(1).repeat(1, 3, 1, 1)
+        elif cc.settings['dataloader']['dataset_name'] == 'covid':
+            assert cc.settings['dataloader']['dataset_name'] == 'covid'
+            # Pad the same data in all 3 dimensions
+            return grey_img.reshape(-1, 28, 28).unsqueeze(1).repeat(1, 3, 1, 1)
+
+
 
     @property
     def is_reversed(self):
