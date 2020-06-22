@@ -16,7 +16,7 @@ trainer:
     mixture_sigma: 0.01
     enable_selection: True
     score:
-      enabled: True
+      enabled: False
       type: inception_score
       score_sample_size: 50
       cuda: False
@@ -27,10 +27,10 @@ dataloader:
   dataset_name: covid
   use_batch: True
   batch_size: 10
-  n_batches: 6
+  n_batches: 0
   shuffle: True
 network:
-  name: four_layer_perceptron
+  name: convolutional_mnist28x28
   loss: bceloss
 master:
   calculate_score: True
