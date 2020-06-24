@@ -5,7 +5,7 @@ from math import sqrt
 
 import numpy as np
 import torch
-from torch.nn import Softmax
+from torch.nn import Softmax, BCELoss
 
 from distribution.state_encoder import StateEncoder
 from helpers.pytorch_helpers import to_pytorch_variable, is_cuda_enabled, size_splits, noise
@@ -155,7 +155,6 @@ class DiscriminatorNet(CompetetiveNet):
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
 
-        input = input.view(-1, 1, 28, 28)
         outputs = self.net(input) #.view(-1)
         d_loss_real = self.loss_function(outputs, real_labels)
 
@@ -170,13 +169,9 @@ class DiscriminatorNet(CompetetiveNet):
 
 
 class GeneratorNetCovid(CompetetiveNet):
-    def __init__(self, loss_function, net, data_size, optimize_bias=True, image_size=(28,28)):
-        self.image_size = image_size
-        GeneratorNet.__init__(self, loss_function, net, data_size, optimize_bias)
-
     @property
     def name(self):
-        return 'GeneratorCovid'
+        return 'Generator'
 
     @property
     def default_fitness(self):
@@ -190,24 +185,39 @@ class GeneratorNetCovid(CompetetiveNet):
         z = noise(batch_size, self.data_size)
 
         fake_images = self.net(z)
+        print('Fake iamges: {}'.format(fake_images.size()))
+        print('D network: {}'.format(opponent.net))
         outputs = opponent.net(fake_images).view(-1)
 
-        return self.loss_function(outputs, real_labels), fake_images
+        return self.loss_function(outputs, real_labels), fake_images, None
 
 
 
 class DiscriminatorNetCovid(CompetetiveNet):
-    def __init__(self, loss_function, net, data_size, optimize_bias=True, image_size=(28, 28)):
-        self.image_size = image_size
-        DiscriminatorNet.__init__(self, loss_function, net, data_size, optimize_bias)
+    def __init__(self, loss_function, net, data_size, optimize_bias=True, image_length=28, image_width=28):
+        CompetetiveNet.__init__(self, loss_function, net, data_size, optimize_bias=optimize_bias)
+        #self.mnist_28x28_conv = mnist_28x28_conv
+        self.image_length = image_length
+        self.image_width = image_width
 
     @property
     def name(self):
-        return 'DiscriminatorCovid'
+        return 'Discriminator'
 
     @property
     def default_fitness(self):
         return float('-inf')
+
+    def clone(self):
+        return DiscriminatorNetCovid(
+            self.loss_function,
+            copy.deepcopy(self.net),
+            self.data_size,
+            self.optimize_bias,
+            # mnist_28x28_conv=self.mnist_28x28_conv,
+            image_length=self.image_length,
+            image_width=self.image_width
+        )
 
     def compute_loss_against(self, opponent, input):
 
@@ -220,22 +230,28 @@ class DiscriminatorNetCovid(CompetetiveNet):
         # Second term of the loss is always zero since real_labels == 1
         batch_size = input.size(0)
 
+        #if self.mnist_28x28_conv:
+        #    input = input.view(-1, 1, 28, 28)
+        input = input.view(-1, 1, self.image_length, self.image_width)
+        print('Real images: {}'.format(input.size()))
+
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
 
-        x, y = self.image_size
-        input = input.view(-1, 1, x, y)
-        outputs = self.net(input) #.view(-1)
+        outputs = self.net(input).view(-1)
+        print('Prediction: {}'.format(outputs.size()))
         d_loss_real = self.loss_function(outputs, real_labels)
 
         # Compute loss using fake images
         # First term of the loss is always zero since fake_labels == 0
         z = noise(batch_size, self.data_size)
         fake_images = opponent.net(z)
+        print('Fake iamges: {}'.format(fake_images.size()))
+        print('G network: {}'.format(opponent.net))
         outputs = self.net(fake_images).view(-1)
         d_loss_fake = self.loss_function(outputs, fake_labels)
 
-        return d_loss_real + d_loss_fake, None
+        return d_loss_real + d_loss_fake, None, None
 
 
 class GeneratorNetSequential(CompetetiveNet):

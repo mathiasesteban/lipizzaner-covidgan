@@ -1,6 +1,6 @@
 trainer:
   name: lipizzaner_gan
-  n_iterations: 3
+  n_iterations: 100
   calculate_net_weights_dist: True
   # independent_probability, exact_proportion
   mixture_generator_samples_mode: exact_proportion
@@ -21,7 +21,7 @@ trainer:
       score_sample_size: 50
       cuda: False
     fitness:
-      fitness_sample_size: 1000
+      fitness_sample_size: 10
       fitness_mode: average    # worse, best, average
 dataloader:
   dataset_name: covid
@@ -30,7 +30,7 @@ dataloader:
   n_batches: 0
   shuffle: True
 network:
-  name: convolutional_mnist28x28
+  name: convolutional_grayscale128x128
   loss: bceloss
 master:
   calculate_score: True
