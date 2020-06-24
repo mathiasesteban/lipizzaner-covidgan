@@ -100,7 +100,7 @@ class InceptionCalculator(ScoreCalculator):
         elif cc.settings['dataloader']['dataset_name'] == 'covid':
             assert cc.settings['dataloader']['dataset_name'] == 'covid'
             # Pad the same data in all 3 dimensions
-            return grey_img.reshape(-1, 28, 28).unsqueeze(1).repeat(1, 3, 1, 1)
+            return grey_img.reshape(-1, 128, 128).unsqueeze(1).repeat(1, 3, 1, 1)
 
 
 
