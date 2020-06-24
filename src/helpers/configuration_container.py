@@ -30,6 +30,7 @@ class ConfigurationContainer:
         'alternating_ea': ('training.ea.alternating_ea_trainer', 'AlternatingEATrainer'),
         'parallel_ea': ('training.ea.parallel_ea_trainer', 'ParallelEATrainer'),
         'four_layer_perceptron': ('networks.network_factory', 'FourLayerPerceptronFactory'),
+        'five_layer_perceptron': ('networks.network_factory', 'FiveLayerPerceptronFactory'),
         'convolutional': ('networks.network_factory', 'ConvolutionalNetworkFactory'),
         'convolutional_grayscale28x28': ('networks.network_factory', 'ConvolutionalGrayscale28x28'),
         'convolutional_grayscale64x64': ('networks.network_factory', 'ConvolutionalGrayscale64x64'),

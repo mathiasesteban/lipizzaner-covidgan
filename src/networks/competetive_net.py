@@ -167,7 +167,6 @@ class DiscriminatorNet(CompetetiveNet):
 
         return d_loss_real + d_loss_fake, None
 
-
 class GeneratorNetCovid(CompetetiveNet):
     @property
     def name(self):
