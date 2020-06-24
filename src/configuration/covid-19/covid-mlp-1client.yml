@@ -30,7 +30,7 @@ dataloader:
   n_batches: 0
   shuffle: True
 network:
-  name: convolutional_grayscale128x128
+  name: five_layer_perceptron
   loss: bceloss
 master:
   calculate_score: True
