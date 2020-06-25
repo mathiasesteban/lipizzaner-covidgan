@@ -28,9 +28,7 @@ class CovidDataLoader(DataLoader):
     def save_images(images, shape, filename):
 
         # img_view = data.view(num_images, 1, WIDTH, HEIGHT)
-        print(images.size())
         img_view = images.view(images.size(0), 1, WIDTH, HEIGHT)
-        print(img_view.size())
         # img_view = images.view(images)
         save_image(img_view, filename)
 

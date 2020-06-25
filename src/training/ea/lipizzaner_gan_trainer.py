@@ -110,6 +110,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
         for iteration in range(n_iterations):
             self._logger.debug('Iteration {} started'.format(iteration + 1))
+            self.cc.settings['network']['iteration'] = iteration
             start_time = time()
 
             all_generators = self.neighbourhood.all_generators
@@ -185,7 +186,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 attackers = new_populations[TYPE_GENERATOR] if self._enable_selection else local_generators
                 defenders = new_populations[TYPE_DISCRIMINATOR] if self._enable_selection else all_discriminators
                 input_data = self.step(local_generators, attackers, defenders, input_data, self.batch_number, loaded,
-                                       data_iterator)
+                                       data_iterator, iteration)
 
                 if self._discriminator_skip_each_nth_step == 0 or self.batch_number % (
                         self._discriminator_skip_each_nth_step + 1) == 0:
@@ -194,7 +195,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     attackers = new_populations[TYPE_DISCRIMINATOR] if self._enable_selection else local_discriminators
                     defenders = new_populations[TYPE_GENERATOR] if self._enable_selection else all_generators
                     input_data = self.step(local_discriminators, attackers, defenders, input_data, self.batch_number,
-                                           loaded, data_iterator)
+                                           loaded, data_iterator, iteration)
 
                 self._logger.info('Iteration {}, Batch {}/{}'.format(iteration + 1, self.batch_number, len(loaded)))
 
@@ -342,9 +343,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                                                                         init_score,
                                                                                                         self.score))
 
-    def step(self, original, attacker, defender, input_data, i, loaded, data_iterator):
+    def step(self, original, attacker, defender, input_data, i, loaded, data_iterator, training_epoch=-1):
         self.mutate_hyperparams(attacker)
-        return self.update_genomes(attacker, defender, input_data, loaded, data_iterator)
+        return self.update_genomes(attacker, defender, input_data, loaded, data_iterator, training_epoch)
 
     def is_last_batch(self, i):
         return self.dataloader.n_batches != 0 and self.dataloader.n_batches - 1 == i
@@ -362,7 +363,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
         for i, individual in enumerate(population.individuals):
             individual.learning_rate = max(0, individual.learning_rate + deltas[i] * self._alpha)
 
-    def update_genomes(self, population_attacker, population_defender, input_var, loaded, data_iterator):
+    def update_genomes(self, population_attacker, population_defender, input_var, loaded, data_iterator, training_epoch):
 
         # TODO Currently picking random opponent, introduce parameter for this
         defender = random.choice(population_defender.individuals).genome
@@ -376,7 +377,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Restore previous state dict, if available
             if individual_attacker.optimizer_state is not None:
                 optimizer.load_state_dict(individual_attacker.optimizer_state)
-            loss = attacker.compute_loss_against(defender, input_var)[0]
+            loss = attacker.compute_loss_against(defender, input_var, training_epoch)[0]
 
             attacker.net.zero_grad()
             defender.net.zero_grad()

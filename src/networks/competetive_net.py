@@ -9,6 +9,7 @@ from torch.nn import Softmax, BCELoss
 
 from distribution.state_encoder import StateEncoder
 from helpers.pytorch_helpers import to_pytorch_variable, is_cuda_enabled, size_splits, noise
+from helpers.configuration_container import ConfigurationContainer
 
 class CompetetiveNet(ABC):
     def __init__(self, loss_function, net, data_size, optimize_bias=True):
@@ -167,6 +168,7 @@ class DiscriminatorNet(CompetetiveNet):
 
         return d_loss_real + d_loss_fake, None
 
+
 class GeneratorNetCovid(CompetetiveNet):
     @property
     def name(self):
@@ -176,7 +178,7 @@ class GeneratorNetCovid(CompetetiveNet):
     def default_fitness(self):
         return float('-inf')
 
-    def compute_loss_against(self, opponent, input):
+    def compute_loss_against(self, opponent, input, training_epoch=None):
         batch_size = input.size(0)
 
         real_labels = to_pytorch_variable(torch.ones(batch_size))
@@ -196,6 +198,14 @@ class DiscriminatorNetCovid(CompetetiveNet):
         self.image_length = image_length
         self.image_width = image_width
 
+        cc = ConfigurationContainer.instance()
+        self.in_mean = cc.settings['network'].get('in_mean', 0.0)
+        self.in_std = cc.settings['network'].get('in_std', 0.05) #Configured for the 1000 first iterations
+        self.in_std_decay_rate = cc.settings['network'].get('in_std_decay_rate', 4.9999999900000004e-05)
+        self.in_std_min = cc.settings['network'].get('in_std_min', 1e-10)
+        self.in_fake_decay = cc.settings['network'].get('in_fake_decay', False)
+        self.label_rate = cc.settings['dataloader'].get('label_rate', 1)
+
     @property
     def name(self):
         return 'Discriminator'
@@ -214,8 +224,9 @@ class DiscriminatorNetCovid(CompetetiveNet):
             image_width=self.image_width
         )
 
-    def compute_loss_against(self, opponent, input):
+    def compute_loss_against(self, opponent, input, training_epoch=None):
 
+        print('ITERATION: {}'.format(training_epoch))
         # If HeuristicLoss is applied in the Generator, the Discriminator applies BCELoss
         if self.loss_function.__class__.__name__ == 'MustangsLoss':
             if 'HeuristicLoss' in self.loss_function.get_applied_loss_name():
@@ -225,7 +236,17 @@ class DiscriminatorNetCovid(CompetetiveNet):
         # Second term of the loss is always zero since real_labels == 1
         batch_size = input.size(0)
 
+        # Adding noise to prevent Discriminator from getting too strong
+        if training_epoch is not None:
+            std = max(self.in_std_min, self.in_std - training_epoch * self.in_std_decay_rate)
+        else:
+            std = self.in_std
+        print('Perturbation Std: {}'.format(std))
+        input_perturbation = to_pytorch_variable(torch.empty(input.shape).normal_(mean=self.in_mean, std=std))
+        input = input + input_perturbation
+
         input = input.view(-1, 1, self.image_length, self.image_width)
+
 
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
