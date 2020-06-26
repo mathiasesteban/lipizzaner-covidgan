@@ -409,16 +409,38 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             return fitness
 
+        self._logger.info('------------ Evaluating fitness ----------------')
         for individual_attacker in population_attacker.individuals:
+            self._logger.info(' Atacker {}'.format(individual_attacker))
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
             for individual_defender in population_defender.individuals:
-                fitness_attacker = float(individual_attacker.genome.compute_loss_against(
-                    individual_defender.genome, input_var)[0])
+                self._logger.info('   - Defender {}'.format(individual_attacker))
+                #Iterate through input
+                input_iterator = iter(input_var)
+                batch_number = 0
+                fitness_attacker_acum = 0
+                max_batches = len(input_var)
+                while batch_number < max_batches: #len(input_var):
+                    input = next(input_iterator)
+                    # if self.cc.settings['dataloader']['dataset_name'] == 'network_traffic':
+                    #     input_data = to_pytorch_variable(next(input_iterator))
+                    #     batch_size = input_data.size(0)
+                    # else:
+                    #     input_data = next(data_iterator)[0]
+                    #     batch_size = input_data.size(0)
+                    #     input_data = to_pytorch_variable(self.dataloader.transpose_data(input_data))
+                    fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
+                    individual_defender.genome, input)[0])
+                    batch_number += 1
+                    self._logger.info('     Batch: {}/{}'.format(batch_number, max_batches))
+
+
+
+                fitness_attacker = fitness_attacker_acum / batch_number
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
-
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
 
