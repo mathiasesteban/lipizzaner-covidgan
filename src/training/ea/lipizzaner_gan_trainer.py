@@ -418,7 +418,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
         for individual_attacker in population_attacker.individuals:
-            self._logger.info(' Atacker {}'.format(individual_attacker))
+            _logger.info(' Atacker {}'.format(individual_attacker))
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
             for individual_defender in population_defender.individuals:
