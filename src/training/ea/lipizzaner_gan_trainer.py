@@ -152,7 +152,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             # Fitness evaluation
             self._logger.debug('Evaluating fitness')
+            self._logger.info('Evaluate fitness GEN for selection')
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
+            self._logger.info('Evaluate fitness DISC for selection')
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
             self._logger.debug('Finished evaluating fitness')
 
@@ -209,8 +211,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Replace the worst with the best new
             if self._enable_selection:
                 # Evaluate fitness of new_populations against neighborhood
+                self._logger.info('Evaluate fitness GEN for replacement')
                 self.evaluate_fitness(new_populations[TYPE_GENERATOR], all_discriminators, fitness_samples,
                                       self.fitness_mode)
+                self._logger.info('Evaluate fitness DISC for replacement')
                 self.evaluate_fitness(new_populations[TYPE_DISCRIMINATOR], all_generators, fitness_samples,
                                       self.fitness_mode)
                 self.concurrent_populations.lock()
@@ -409,6 +413,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             return fitness
 
+        print('\n\n\n\n')
+        i = 1
         for individual_attacker in population_attacker.individuals:
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
@@ -418,9 +424,13 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
+                print('Fitness evaluation: {}'.format(i))
+                i += 1
 
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
+
+        print('\n\n\n\n')
 
     def mutate_mixture_weights_with_score(self, input_data):
         # Not necessary for single-cell grids, as mixture must always be [1]

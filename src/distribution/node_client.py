@@ -25,6 +25,9 @@ class NodeClient:
         Concurrently loads all current generator individuals from the given nodes.
         Returns when all are loaded, or raises TimeoutError when timeout is reached.
         """
+        NodeClient._logger.info('All Nodes: {}'.format(nodes))
+        # nodes = [nodes[0]]
+        NodeClient._logger.info('Nodes: {}'.format(nodes))
         generators = self.load_generators_from_api(nodes, timeout_sec)
 
         return [self._parse_individual(gen, self.network_factory.create_generator)

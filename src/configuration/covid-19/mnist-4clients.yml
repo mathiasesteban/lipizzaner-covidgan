@@ -1,6 +1,6 @@
 trainer:
   name: lipizzaner_gan
-  n_iterations: 3
+  n_iterations: 5
   calculate_net_weights_dist: True
   # independent_probability, exact_proportion
   mixture_generator_samples_mode: exact_proportion
@@ -16,24 +16,24 @@ trainer:
     mixture_sigma: 0.01
     enable_selection: True
     score:
-      enabled: True
+      enabled: False
       type: inception_score
       score_sample_size: 1000
       cuda: False
     fitness:
-      fitness_sample_size: 1000
+      fitness_sample_size: 100000
       fitness_mode: average    # worse, best, average
 dataloader:
   dataset_name: mnist
   use_batch: True
   batch_size: 100
-  n_batches: 0
+  n_batches: 30
   shuffle: True
 network:
   name: four_layer_perceptron
   loss: bceloss
 master:
-  calculate_score: True
+  calculate_score: False
   score_sample_size: 50000
   cuda: False
 general: !include general-4clients.yml
