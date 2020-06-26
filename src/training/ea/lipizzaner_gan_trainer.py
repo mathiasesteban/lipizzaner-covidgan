@@ -102,7 +102,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                        'between 0 and the number of iterations (n_iterations).'
         self.checkpoint_period = self.cc.settings['general'].get('checkpoint_period', checkpoint_period)
 
-        self.batch_size = self.settings['dataloader']['batch_size'] if self.settings['dataloader']['use_batch'] else None
+        self.batch_size = self.cc.settings['dataloader']['batch_size'] if self.cc.settings['dataloader']['use_batch'] else None
 
     def train(self, n_iterations, stop_event=None):
         loaded = self.dataloader.load()
