@@ -102,7 +102,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                        'between 0 and the number of iterations (n_iterations).'
         self.checkpoint_period = self.cc.settings['general'].get('checkpoint_period', checkpoint_period)
 
-
+        self.batch_size = self.settings['dataloader']['batch_size'] if self.settings['dataloader']['use_batch'] else None
 
     def train(self, n_iterations, stop_event=None):
         loaded = self.dataloader.load()
@@ -152,6 +152,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             # Fitness evaluation
             self._logger.debug('Evaluating fitness')
+            # Splitting fitness_samples
+            if not self.batch_size is None:
+                fitness_samples = torch.split(fitness_samples, self.batch_size)
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
             self._logger.debug('Finished evaluating fitness')
@@ -410,6 +413,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             return fitness
 
         self._logger.info('------------ Evaluating fitness ----------------')
+
+
         for individual_attacker in population_attacker.individuals:
             self._logger.info(' Atacker {}'.format(individual_attacker))
             individual_attacker.fitness = float(
