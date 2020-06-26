@@ -239,7 +239,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
             # Mutate mixture weights after selection
-            if not self.optimize_weights_at_the_end:
+            if False: #not self.optimize_weights_at_the_end:
                 self.mutate_mixture_weights_with_score(input_data)  # self.score is updated here
 
             stop_time = time()
@@ -434,6 +434,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
     def mutate_mixture_weights_with_score(self, input_data):
         # Not necessary for single-cell grids, as mixture must always be [1]
+        return
         if self.neighbourhood.grid_size == 1:
             if self.score_calc is not None:
                 self._logger.info('Calculating FID/inception score.')
