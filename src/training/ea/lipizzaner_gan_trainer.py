@@ -412,6 +412,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             return fitness
 
+        import logging
         _logger = logging.getLogger(__name__)
         _logger.info('------------ Evaluating fitness ----------------')
 
