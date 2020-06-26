@@ -412,7 +412,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
             return fitness
 
-        self._logger.info('------------ Evaluating fitness ----------------')
+        _logger = logging.getLogger(__name__)
+        _logger.info('------------ Evaluating fitness ----------------')
 
 
         for individual_attacker in population_attacker.individuals:
@@ -420,7 +421,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
             for individual_defender in population_defender.individuals:
-                self._logger.info('   - Defender {}'.format(individual_attacker))
+                _logger.info('   - Defender {}'.format(individual_attacker))
                 #Iterate through input
                 input_iterator = iter(input_var)
                 batch_number = 0
@@ -438,7 +439,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
                     individual_defender.genome, input)[0])
                     batch_number += 1
-                    self._logger.info('     Batch: {}/{}'.format(batch_number, max_batches))
+                    _logger.info('     Batch: {}/{}'.format(batch_number, max_batches))
 
 
 
@@ -446,6 +447,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
+                _logger.info('     Fitness: {}'.format(individual_attacker.fitness))
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
 
