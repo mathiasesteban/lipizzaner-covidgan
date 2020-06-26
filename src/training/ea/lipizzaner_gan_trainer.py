@@ -153,8 +153,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Fitness evaluation
             self._logger.debug('Evaluating fitness')
             # Splitting fitness_samples
+            self._logger.info('Non-splited fitness samples size: {}'.format(fitness_samples.size()))
             if not self.batch_size is None:
                 fitness_samples = torch.split(fitness_samples, self.batch_size)
+                self._logger.info('Splited fitness samples size: {}'.format(fitness_samples.size()))
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
             self._logger.debug('Finished evaluating fitness')
@@ -418,11 +420,11 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
         for individual_attacker in population_attacker.individuals:
-            _logger.info(' Atacker {}'.format(individual_attacker))
+            _logger.info(' Atacker {}'.format(individual_attacker.id))
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
             for individual_defender in population_defender.individuals:
-                _logger.info('   - Defender {}'.format(individual_attacker))
+                _logger.info('   - Defender {}'.format(individual_attacker.id))
                 #Iterate through input
                 input_iterator = iter(input_var)
                 batch_number = 0
