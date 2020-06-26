@@ -119,7 +119,7 @@ class GeneratorNet(CompetetiveNet):
     def default_fitness(self):
         return float('-inf')
 
-    def compute_loss_against(self, opponent, input):
+    def compute_loss_against(self, opponent, input, training_epoch=None):
         batch_size = input.size(0)
 
         real_labels = to_pytorch_variable(torch.ones(batch_size))
@@ -142,7 +142,7 @@ class DiscriminatorNet(CompetetiveNet):
     def default_fitness(self):
         return float('-inf')
 
-    def compute_loss_against(self, opponent, input):
+    def compute_loss_against(self, opponent, input, training_epoch=None):
 
         # If HeuristicLoss is applied in the Generator, the Discriminator applies BCELoss
         if self.loss_function.__class__.__name__ == 'MustangsLoss':
