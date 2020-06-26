@@ -21,7 +21,7 @@ trainer:
       score_sample_size: 50
       cuda: False
     fitness:
-      fitness_sample_size: 10
+      fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
 dataloader:
   dataset_name: covid

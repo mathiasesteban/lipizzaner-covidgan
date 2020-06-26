@@ -433,11 +433,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
         print('\n\n\n\n')
 
     def mutate_mixture_weights_with_score(self, input_data):
-        # Not necessary for single-cell grids, as mixture must always be [1]
-        return
-        if self.neighbourhood.grid_size == 1:
-            if self.score_calc is not None:
-                self._logger.info('Calculating FID/inception score.')
+        if self.score_calc is not None:
+            self._logger.info('Calculating FID/inception score.')
+            # Not necessary for single-cell grids, as mixture must always be [1]
+            if self.neighbourhood.grid_size == 1:
                 best_generators = self.neighbourhood.best_generators
 
                 dataset = MixedGeneratorDataset(best_generators,
@@ -445,36 +444,36 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                 self.score_sample_size,
                                                 self.cc.settings['trainer']['mixture_generator_samples_mode'])
                 self.score = self.score_calc.calculate(dataset)[0]
-        else:
-            # Mutate mixture weights
-            z = np.random.normal(loc=0, scale=self.mixture_sigma,
-                                 size=len(self.neighbourhood.mixture_weights_generators))
-            transformed = np.asarray([value for _, value in self.neighbourhood.mixture_weights_generators.items()])
-            transformed += z
-            # Don't allow negative values, normalize to sum of 1.0
-            transformed = np.clip(transformed, 0, None)
-            transformed /= np.sum(transformed)
+            else:
+                # Mutate mixture weights
+                z = np.random.normal(loc=0, scale=self.mixture_sigma,
+                                     size=len(self.neighbourhood.mixture_weights_generators))
+                transformed = np.asarray([value for _, value in self.neighbourhood.mixture_weights_generators.items()])
+                transformed += z
+                # Don't allow negative values, normalize to sum of 1.0
+                transformed = np.clip(transformed, 0, None)
+                transformed /= np.sum(transformed)
 
-            new_mixture_weights_generators = OrderedDict(
-                zip(self.neighbourhood.mixture_weights_generators.keys(), transformed))
+                new_mixture_weights_generators = OrderedDict(
+                    zip(self.neighbourhood.mixture_weights_generators.keys(), transformed))
 
-            best_generators = self.neighbourhood.best_generators
-            dataset_before_mutation = MixedGeneratorDataset(best_generators,
-                                                            self.neighbourhood.mixture_weights_generators,
-                                                            self.score_sample_size,
-                                                            self.cc.settings['trainer'][
-                                                                'mixture_generator_samples_mode'])
-            dataset_after_mutation = MixedGeneratorDataset(best_generators,
-                                                           new_mixture_weights_generators,
-                                                           self.score_sample_size,
-                                                           self.cc.settings['trainer'][
-                                                               'mixture_generator_samples_mode'])
+                best_generators = self.neighbourhood.best_generators
 
-            if self.score_calc is not None:
-                self._logger.info('Calculating FID/inception score.')
-
+                dataset_before_mutation = MixedGeneratorDataset(best_generators,
+                                                                self.neighbourhood.mixture_weights_generators,
+                                                                self.score_sample_size,
+                                                                self.cc.settings['trainer'][
+                                                                    'mixture_generator_samples_mode'])
                 score_before_mutation = self.score_calc.calculate(dataset_before_mutation)[0]
+                del dataset_before_mutation
+
+                dataset_after_mutation = MixedGeneratorDataset(best_generators,
+                                                               new_mixture_weights_generators,
+                                                               self.score_sample_size,
+                                                               self.cc.settings['trainer'][
+                                                                   'mixture_generator_samples_mode'])
                 score_after_mutation = self.score_calc.calculate(dataset_after_mutation)[0]
+                del dataset_after_mutation
 
                 # For fid the lower the better, for inception_score, the higher the better
                 if (score_after_mutation < score_before_mutation and self.score_calc.is_reversed) \
