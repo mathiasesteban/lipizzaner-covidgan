@@ -5,12 +5,14 @@ from data.data_loader import DataLoader
 from torchvision.utils import save_image
 from PIL import Image
 import torch
+from torch.autograd import Variable
+
 from helpers.pytorch_helpers import denorm
 
 
 BATCH_SIZE = 10
-WIDTH = 28
-HEIGHT = 28
+WIDTH = 128
+HEIGHT = 128
 
 
 class CovidDataLoader(DataLoader):
@@ -25,8 +27,10 @@ class CovidDataLoader(DataLoader):
     @staticmethod
     def save_images(images, shape, filename):
 
+        # img_view = data.view(num_images, 1, WIDTH, HEIGHT)
         img_view = images.view(images.size(0), 1, WIDTH, HEIGHT)
-        save_image(denorm(img_view.data), filename)
+        # img_view = images.view(images)
+        save_image(img_view, filename)
 
 
 class COVIDDataSet(Dataset):
