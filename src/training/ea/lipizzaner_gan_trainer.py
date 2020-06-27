@@ -153,10 +153,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Fitness evaluation
             self._logger.debug('Evaluating fitness')
             # Splitting fitness_samples
-            self._logger.info('Non-splited fitness samples size: {}'.format(fitness_samples.size()))
+            self._logger.debug('Non-splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
             if not self.batch_size is None:
-                fitness_samples = torch.split(fitness_samples, self.batch_size)
-                self._logger.info('Splited fitness samples size: {}'.format(fitness_samples.size()))
+                fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.batch_size))
+                self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
             self._logger.debug('Finished evaluating fitness')
@@ -416,15 +416,15 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
         import logging
         _logger = logging.getLogger(__name__)
-        _logger.info('------------ Evaluating fitness ----------------')
+        _logger.debug('------------ Evaluating fitness ----------------')
 
 
         for individual_attacker in population_attacker.individuals:
-            _logger.info(' Atacker {}'.format(individual_attacker.id))
+            _logger.debug(' Atacker {}'.format(individual_attacker.id))
             individual_attacker.fitness = float(
                 '-inf')  # Reinitalize before evaluation started (Needed for average fitness)
             for individual_defender in population_defender.individuals:
-                _logger.info('   - Defender {}'.format(individual_attacker.id))
+                _logger.debug('   - Defender {}'.format(individual_attacker.id))
                 #Iterate through input
                 input_iterator = iter(input_var)
                 batch_number = 0
@@ -432,17 +432,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 max_batches = len(input_var)
                 while batch_number < max_batches: #len(input_var):
                     input = next(input_iterator)
-                    # if self.cc.settings['dataloader']['dataset_name'] == 'network_traffic':
-                    #     input_data = to_pytorch_variable(next(input_iterator))
-                    #     batch_size = input_data.size(0)
-                    # else:
-                    #     input_data = next(data_iterator)[0]
-                    #     batch_size = input_data.size(0)
-                    #     input_data = to_pytorch_variable(self.dataloader.transpose_data(input_data))
                     fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
                     individual_defender.genome, input)[0])
                     batch_number += 1
-                    _logger.info('     Batch: {}/{}'.format(batch_number, max_batches))
+                    _logger.debug('     Batch: {}/{}'.format(batch_number, max_batches))
 
 
 
@@ -450,7 +443,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
-                _logger.info('     Fitness: {}'.format(individual_attacker.fitness))
+                _logger.debug('     Fitness: {}'.format(individual_attacker.fitness))
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
 
