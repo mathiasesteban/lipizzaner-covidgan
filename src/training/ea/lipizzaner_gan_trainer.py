@@ -154,8 +154,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             self._logger.debug('Evaluating fitness')
             # Splitting fitness_samples
             self._logger.debug('Non-splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
-            if self.batch_size is not None:
-                fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.batch_size))
+            if self.fitness_batch_size is not None:
+                fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.fitness_batch_size))
                 self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
