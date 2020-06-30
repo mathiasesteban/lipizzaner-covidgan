@@ -15,7 +15,7 @@ trainer:
     discriminator_skip_each_nth_step: 0
     mixture_sigma: 0.01
     enable_selection: True
-    apply_selection_every: 100
+    apply_selection_every: 10
     subpopulation_sample_size: 3
     score:
       enabled: False
@@ -25,7 +25,7 @@ trainer:
     fitness:
       fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
-      fitness_batch_size: 10
+      fitness_batch_size: 100
 dataloader:
   dataset_name: covid
   use_batch: True
