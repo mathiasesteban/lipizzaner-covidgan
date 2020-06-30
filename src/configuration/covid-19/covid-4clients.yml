@@ -12,7 +12,7 @@ trainer:
     # Hyperparameter mutation
     alpha: 0.0001
     mutation_probability: 0.5
-    discriminator_skip_each_nth_step: 2
+    discriminator_skip_each_nth_step: 0
     mixture_sigma: 0.01
     enable_selection: True
     apply_selection_every: 100
@@ -25,7 +25,7 @@ trainer:
     fitness:
       fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
-      fitness_batch_size: 100
+      fitness_batch_size: 10
 dataloader:
   dataset_name: covid
   use_batch: True
