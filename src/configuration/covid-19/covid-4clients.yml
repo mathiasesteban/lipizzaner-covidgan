@@ -1,6 +1,6 @@
 trainer:
   name: lipizzaner_gan
-  n_iterations: 2000
+  n_iterations: 500
   calculate_net_weights_dist: True
   # independent_probability, exact_proportion
   mixture_generator_samples_mode: exact_proportion
@@ -25,7 +25,7 @@ trainer:
     fitness:
       fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
-      #fitness_batch_size: 100
+      fitness_batch_size: 100
 dataloader:
   dataset_name: covid
   use_batch: True

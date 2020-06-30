@@ -117,32 +117,33 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             self.cc.settings['network']['iteration'] = iteration
             start_time = time()
 
-            all_generators = self.neighbourhood.all_generators(self.individuals_sampling_size)
-            all_discriminators = self.neighbourhood.all_discriminators(self.individuals_sampling_size)
-            local_generators = self.neighbourhood.local_generators
-            local_discriminators = self.neighbourhood.local_discriminators
-
-            # Log the name of individuals in entire neighborhood and local individuals for every iteration
-            # (to help tracing because individuals from adjacent cells might be from different iterations)
-            self._logger.info('Neighborhood located in possition {} of the grid'.format(self.neighbourhood.grid_position))
-            self._logger.info('Generators in current neighborhood are {}'.format([
-                individual.name for individual in all_generators.individuals
-            ]))
-            self._logger.info('Discriminators in current neighborhood are {}'.format([
-                individual.name for individual in all_discriminators.individuals
-            ]))
-            self._logger.info('Local generators in current neighborhood are {}'.format([
-                individual.name for individual in local_generators.individuals
-            ]))
-            self._logger.info('Local discriminators in current neighborhood are {}'.format([
-                individual.name for individual in local_discriminators.individuals
-            ]))
-
-            self._logger.info('L2 distance between all generators weights: {}'.format(all_generators.net_weights_dist))
-            self._logger.info(
-                'L2 distance between all discriminators weights: {}'.format(all_discriminators.net_weights_dist))
-
             if self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0):
+                all_generators = self.neighbourhood.all_generators(self.individuals_sampling_size)
+                all_discriminators = self.neighbourhood.all_discriminators(self.individuals_sampling_size)
+                local_generators = self.neighbourhood.local_generators
+                local_discriminators = self.neighbourhood.local_discriminators
+
+                # Log the name of individuals in entire neighborhood and local individuals for every iteration
+                # (to help tracing because individuals from adjacent cells might be from different iterations)
+                self._logger.info('Neighborhood located in possition {} of the grid'.format(self.neighbourhood.grid_position))
+                self._logger.info('Generators in current neighborhood are {}'.format([
+                    individual.name for individual in all_generators.individuals
+                ]))
+                self._logger.info('Discriminators in current neighborhood are {}'.format([
+                    individual.name for individual in all_discriminators.individuals
+                ]))
+                self._logger.info('Local generators in current neighborhood are {}'.format([
+                    individual.name for individual in local_generators.individuals
+                ]))
+                self._logger.info('Local discriminators in current neighborhood are {}'.format([
+                    individual.name for individual in local_discriminators.individuals
+                ]))
+
+                self._logger.info('L2 distance between all generators weights: {}'.format(all_generators.net_weights_dist))
+                self._logger.info(
+                    'L2 distance between all discriminators weights: {}'.format(all_discriminators.net_weights_dist))
+
+#            if self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0):
                 self._logger.info('Iteration: {}. ----------------------------------- Applying selection'.format(iteration))
                 selection_applied_apply_replacement = True
                 new_populations = {}
@@ -364,7 +365,6 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                                                                         self.score))
 
     def step(self, original, attacker, defender, input_data, i, loaded, data_iterator, training_epoch=None):
-        print(training_epoch)
         self.mutate_hyperparams(attacker)
         return self.update_genomes(attacker, defender, input_data, loaded, data_iterator, training_epoch)
 
