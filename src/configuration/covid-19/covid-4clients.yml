@@ -27,13 +27,13 @@ trainer:
       fitness_mode: average    # worse, best, average
       #fitness_batch_size: 100
 dataloader:
-  dataset_name: mnist
+  dataset_name: covid
   use_batch: True
   batch_size: 10
   n_batches: 6
   shuffle: True
 network:
-  name: four_layer_perceptron
+  name: convolutional_grayscale128x128
   loss: bceloss
 master:
   calculate_score: True
