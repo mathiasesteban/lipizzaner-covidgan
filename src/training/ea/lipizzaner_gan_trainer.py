@@ -286,6 +286,12 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
         if self.optimize_weights_at_the_end:
+            all_generators = self.neighbourhood.all_generators(None)
+            all_discriminators = self.neighbourhood.all_discriminators(None)
+
+            self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
+            self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
+
             self.optimize_generator_mixture_weights()
 
             path_real_images, path_fake_images = \
