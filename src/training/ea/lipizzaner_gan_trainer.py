@@ -144,7 +144,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     'L2 distance between all discriminators weights: {}'.format(all_discriminators.net_weights_dist))
 
 #            if self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0):
-                self._logger.info('Iteration: {}. ----------------------------------- Applying selection'.format(iteration))
+                self._logger.info('Iteration: {}. ----------------------------------- Applying selection'.format(iteration+1))
                 selection_applied_apply_replacement = True
                 new_populations = {}
 
@@ -227,7 +227,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 if selection_applied_apply_replacement and ((iteration+1) % (self.apply_selection_every_iterations) == 0
                         or (iteration+1) == n_iterations):
                     selection_applied_apply_replacement = False
-                    self._logger.info('Iteration: {}. -----------------------------Applying Replacement'.format(iteration))
+                    self._logger.info('Iteration: {}. -----------------------------Applying Replacement'.format(iteration+1))
                     # Evaluate fitness of new_populations against neighborhood
                     self.evaluate_fitness(new_populations[TYPE_GENERATOR], all_discriminators, fitness_samples,
                                           self.fitness_mode, splited)
@@ -248,13 +248,13 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     for i, individual in enumerate(local_discriminators.individuals):
                         individual.id = '{}/D{}'.format(self.neighbourhood.cell_number, i)
                         individual.iteration = iteration + 1
-                else: # If there is not replacement, we update the fitness
-                    self._logger.info(
-                        'Iteration: {}. -----------------------------Evaluating fitness because there is not replacement'.format(iteration))
-                    self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode,
-                                          splited)
-                    self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode,
-                                          splited)
+                # else: # If there is not replacement, we update the fitness
+                #     self._logger.info(
+                #         'Iteration: {}. -----------------------------Evaluating fitness because there is not replacement'.format(iteration+1))
+                #     self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode,
+                #                           splited)
+                #     self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode,
+                #                           splited)
             else:
                 # Re-evaluate fitness of local_generators and local_discriminators against neighborhood
                 self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
