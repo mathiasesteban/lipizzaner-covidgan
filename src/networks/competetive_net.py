@@ -156,7 +156,7 @@ class DiscriminatorNet(CompetetiveNet):
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
 
-        outputs = self.net(input) #.view(-1)
+        outputs = self.net(input).view(-1)
         d_loss_real = self.loss_function(outputs, real_labels)
 
         # Compute loss using fake images

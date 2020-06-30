@@ -103,18 +103,22 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                                        'between 0 and the number of iterations (n_iterations).'
         self.checkpoint_period = self.cc.settings['general'].get('checkpoint_period', checkpoint_period)
 
+        self.apply_selection_every_iterations = self.settings.get('apply_selection_every', 1)
+
+        self.individuals_sampling_size = self.settings.get('subpopulation_sample_size', None)
+
 
     def train(self, n_iterations, stop_event=None):
         loaded = self.dataloader.load()
-
+        selection_applied_apply_replacement = False
 
         for iteration in range(n_iterations):
             self._logger.debug('Iteration {} started'.format(iteration + 1))
             self.cc.settings['network']['iteration'] = iteration
             start_time = time()
 
-            all_generators = self.neighbourhood.all_generators
-            all_discriminators = self.neighbourhood.all_discriminators
+            all_generators = self.neighbourhood.all_generators(self.individuals_sampling_size)
+            all_discriminators = self.neighbourhood.all_discriminators(self.individuals_sampling_size)
             local_generators = self.neighbourhood.local_generators
             local_discriminators = self.neighbourhood.local_discriminators
 
@@ -138,40 +142,45 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             self._logger.info(
                 'L2 distance between all discriminators weights: {}'.format(all_discriminators.net_weights_dist))
 
-            new_populations = {}
+            if self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0):
+                self._logger.info('Iteration: {}. ----------------------------------- Applying selection'.format(iteration))
+                selection_applied_apply_replacement = True
+                new_populations = {}
 
-            # Create random dataset to evaluate fitness in each iterations
-            fitness_samples = self.generate_random_fitness_samples(self.fitness_sample_size)
-            if self.cc.settings['dataloader']['dataset_name'] == 'celeba' \
-                    or self.cc.settings['dataloader']['dataset_name'] == 'cifar':
-                fitness_samples = to_pytorch_variable(fitness_samples)
-            elif self.cc.settings['dataloader']['dataset_name'] == 'network_traffic':
-                fitness_samples = to_pytorch_variable(generate_random_sequences(self.fitness_sample_size))
-            else:
-                fitness_samples = to_pytorch_variable(fitness_samples.view(self.fitness_sample_size, -1))
+                # Create random dataset to evaluate fitness in each iterations
+                fitness_samples = self.generate_random_fitness_samples(self.fitness_sample_size)
+                if self.cc.settings['dataloader']['dataset_name'] == 'celeba' \
+                        or self.cc.settings['dataloader']['dataset_name'] == 'cifar':
+                    fitness_samples = to_pytorch_variable(fitness_samples)
+                elif self.cc.settings['dataloader']['dataset_name'] == 'network_traffic':
+                    fitness_samples = to_pytorch_variable(generate_random_sequences(self.fitness_sample_size))
+                else:
+                    fitness_samples = to_pytorch_variable(fitness_samples.view(self.fitness_sample_size, -1))
 
-            # Fitness evaluation
-            self._logger.debug('Evaluating fitness')
-            # Splitting fitness_samples
-            self._logger.debug('Non-splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
-            if self.fitness_batch_size is not None:
-                fitness_samples = torch.split(fitness_samples, int(self.fitness_batch_size))   
-                # fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.fitness_batch_size))
-                self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
-            self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode)
-            self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode)
-            self._logger.debug('Finished evaluating fitness')
+                # Fitness evaluation
+                self._logger.debug('Evaluating fitness')
+                # Splitting fitness_samples
+                self._logger.debug('Non-splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
+                splited = False
+                if self.fitness_batch_size is not None:
+                    splited = True
+                    fitness_samples = torch.split(fitness_samples, int(self.fitness_batch_size))
+                    # fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.fitness_batch_size))
+                    self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
+                self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
+                self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
+                self._logger.debug('Finished evaluating fitness')
 
-            # Tournament selection
-            if self._enable_selection:
-                self._logger.debug('Started tournament selection')
-                new_populations[TYPE_GENERATOR] = self.tournament_selection(all_generators,
-                                                                            TYPE_GENERATOR,
-                                                                            is_logging=True)
-                new_populations[TYPE_DISCRIMINATOR] = self.tournament_selection(all_discriminators,
-                                                                                TYPE_DISCRIMINATOR,
+                # Tournament selection
+                if self._enable_selection:
+                    self._logger.debug('Started tournament selection')
+                    new_populations[TYPE_GENERATOR] = self.tournament_selection(all_generators,
+                                                                                TYPE_GENERATOR,
                                                                                 is_logging=True)
-                self._logger.debug('Finished tournament selection')
+                    new_populations[TYPE_DISCRIMINATOR] = self.tournament_selection(all_discriminators,
+                                                                                    TYPE_DISCRIMINATOR,
+                                                                                    is_logging=True)
+                    self._logger.debug('Finished tournament selection')
 
             self.batch_number = 0
             data_iterator = iter(loaded)
@@ -214,30 +223,34 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Perform selection first before mutation of mixture_weights
             # Replace the worst with the best new
             if self._enable_selection:
-                # Evaluate fitness of new_populations against neighborhood
-                self.evaluate_fitness(new_populations[TYPE_GENERATOR], all_discriminators, fitness_samples,
-                                      self.fitness_mode)
-                self.evaluate_fitness(new_populations[TYPE_DISCRIMINATOR], all_generators, fitness_samples,
-                                      self.fitness_mode)
-                self.concurrent_populations.lock()
-                local_generators.replacement(new_populations[TYPE_GENERATOR], self._n_replacements, is_logging=True)
-                local_generators.sort_population(is_logging=True)
-                local_discriminators.replacement(new_populations[TYPE_DISCRIMINATOR], self._n_replacements,
-                                                 is_logging=True)
-                local_discriminators.sort_population(is_logging=True)
-                self.concurrent_populations.unlock()
+                if selection_applied_apply_replacement and ((iteration+1) % (self.apply_selection_every_iterations) == 0
+                        or (iteration+1) == n_iterations):
+                    selection_applied_apply_replacement = False
+                    self._logger.info('Iteration: {}. -----------------------------Applying Replacement'.format(iteration))
+                    # Evaluate fitness of new_populations against neighborhood
+                    self.evaluate_fitness(new_populations[TYPE_GENERATOR], all_discriminators, fitness_samples,
+                                          self.fitness_mode, splited)
+                    self.evaluate_fitness(new_populations[TYPE_DISCRIMINATOR], all_generators, fitness_samples,
+                                          self.fitness_mode, splited)
+                    self.concurrent_populations.lock()
+                    local_generators.replacement(new_populations[TYPE_GENERATOR], self._n_replacements, is_logging=True)
+                    local_generators.sort_population(is_logging=True)
+                    local_discriminators.replacement(new_populations[TYPE_DISCRIMINATOR], self._n_replacements,
+                                                     is_logging=True)
+                    local_discriminators.sort_population(is_logging=True)
+                    self.concurrent_populations.unlock()
 
-                # Update individuals' iteration and id after replacement and logging to ease tracing
-                for i, individual in enumerate(local_generators.individuals):
-                    individual.id = '{}/G{}'.format(self.neighbourhood.cell_number, i)
-                    individual.iteration = iteration + 1
-                for i, individual in enumerate(local_discriminators.individuals):
-                    individual.id = '{}/D{}'.format(self.neighbourhood.cell_number, i)
-                    individual.iteration = iteration + 1
+                    # Update individuals' iteration and id after replacement and logging to ease tracing
+                    for i, individual in enumerate(local_generators.individuals):
+                        individual.id = '{}/G{}'.format(self.neighbourhood.cell_number, i)
+                        individual.iteration = iteration + 1
+                    for i, individual in enumerate(local_discriminators.individuals):
+                        individual.id = '{}/D{}'.format(self.neighbourhood.cell_number, i)
+                        individual.iteration = iteration + 1
             else:
                 # Re-evaluate fitness of local_generators and local_discriminators against neighborhood
-                self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode)
-                self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode)
+                self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
+                self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
 
 
             # Mutate mixture weights after selection
@@ -259,6 +272,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                            path_real_images, path_fake_images)
 
             if self.checkpoint_period>0 and (iteration+1)%self.checkpoint_period==0:
+
                 self.save_checkpoint(all_generators.individuals, all_discriminators.individuals,
                                      self.neighbourhood.cell_number, self.neighbourhood.grid_position)
 
@@ -396,7 +410,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
         return input_var
 
     @staticmethod
-    def evaluate_fitness(population_attacker, population_defender, input_var, fitness_mode):
+    def evaluate_fitness(population_attacker, population_defender, input_var, fitness_mode, splited=False):
         # Single direction only: Evaluate fitness of attacker based on defender
         # TODO: Simplify and refactor this function
         def compare_fitness(curr_fitness, fitness, mode):
@@ -432,16 +446,17 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 batch_number = 0
                 fitness_attacker_acum = 0
                 max_batches = len(input_var)
-                while batch_number < max_batches: #len(input_var):
-                    input = next(input_iterator)
-                    fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
-                    individual_defender.genome, input)[0])
-                    batch_number += 1
-                    _logger.debug('     Batch: {}/{}'.format(batch_number, max_batches))
-
-
-
-                fitness_attacker = fitness_attacker_acum / batch_number
+                if splited:
+                    while batch_number < max_batches: #len(input_var):
+                        input = next(input_iterator)
+                        fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
+                        individual_defender.genome, input)[0])
+                        batch_number += 1
+                        _logger.debug('     Batch: {}/{}'.format(batch_number, max_batches))
+                    fitness_attacker = fitness_attacker_acum / batch_number
+                else:
+                    fitness_attacker = float(individual_attacker.genome.compute_loss_against(
+                        individual_defender.genome, input_var)[0])
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)

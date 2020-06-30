@@ -1,6 +1,6 @@
 trainer:
   name: lipizzaner_gan
-  n_iterations: 3
+  n_iterations: 2000
   calculate_net_weights_dist: True
   # independent_probability, exact_proportion
   mixture_generator_samples_mode: exact_proportion
@@ -15,6 +15,8 @@ trainer:
     discriminator_skip_each_nth_step: 2
     mixture_sigma: 0.01
     enable_selection: True
+    apply_selection_every: 100
+    subpopulation_sample_size: 3
     score:
       enabled: False
       type: inception_score
@@ -23,8 +25,9 @@ trainer:
     fitness:
       fitness_sample_size: 1000
       fitness_mode: average    # worse, best, average
+      #fitness_batch_size: 100
 dataloader:
-  dataset_name: covid
+  dataset_name: mnist
   use_batch: True
   batch_size: 10
   n_batches: 6
@@ -35,5 +38,5 @@ network:
 master:
   calculate_score: True
   score_sample_size: 50000
-  cuda: True 
+  cuda: True
 general: !include general-4clients.yml

@@ -11,7 +11,7 @@ from helpers.math_helpers import is_square
 from helpers.network_helpers import is_local_host
 from helpers.population import Population, TYPE_GENERATOR, TYPE_DISCRIMINATOR
 from helpers.singleton import Singleton
-
+from random import sample
 
 @Singleton
 class Neighbourhood:
@@ -46,12 +46,14 @@ class Neighbourhood:
         # Return local individuals for now, possibility to split up gens and discs later
         return self._set_source(self.concurrent_populations.discriminator)
 
-    @property
-    def all_generators(self):
+    #@property
+    def all_generators(self, sampling_size=None):
         neighbour_individuals = self.node_client.get_all_generators(self.neighbours)
         local_population = self.local_generators
-
-        return Population(individuals=neighbour_individuals + local_population.individuals,
+        individuals = neighbour_individuals + local_population.individuals
+        if sampling_size is not None:
+            individuals = sample(individuals, sampling_size)
+        return Population(individuals=individuals,
                           default_fitness=local_population.default_fitness,
                           population_type=TYPE_GENERATOR)
 
@@ -65,12 +67,14 @@ class Neighbourhood:
                           default_fitness=local_population.default_fitness,
                           population_type=TYPE_GENERATOR)
 
-    @property
-    def all_discriminators(self):
+    #@property
+    def all_discriminators(self, sampling_size=None):
         neighbour_individuals = self.node_client.get_all_discriminators(self.neighbours)
         local_population = self.local_discriminators
-
-        return Population(individuals=neighbour_individuals + local_population.individuals,
+        individuals = neighbour_individuals + local_population.individuals
+        if sampling_size is not None:
+            individuals = sample(individuals, sampling_size)
+        return Population(individuals=individuals,
                           default_fitness=local_population.default_fitness,
                           population_type=TYPE_DISCRIMINATOR)
 
