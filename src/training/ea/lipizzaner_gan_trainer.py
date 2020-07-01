@@ -289,10 +289,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 self.save_checkpoint(all_generators.individuals, all_discriminators.individuals,
                                      self.neighbourhood.cell_number, self.neighbourhood.grid_position)
 
+        all_generators = self.neighbourhood.all_generators(None)
+        all_discriminators = self.neighbourhood.all_discriminators(None)
 
         if self.optimize_weights_at_the_end:
-            all_generators = self.neighbourhood.all_generators(None)
-            all_discriminators = self.neighbourhood.all_discriminators(None)
 
             self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
             self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
