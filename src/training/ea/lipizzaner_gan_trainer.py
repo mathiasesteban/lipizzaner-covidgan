@@ -170,8 +170,6 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
                 self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
                 self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
-                del fitness_samples
-                pytorch.cuda.empty_cache()
                 self._logger.debug('Finished evaluating fitness')
 
                 # Tournament selection
@@ -229,7 +227,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 if selection_applied_apply_replacement and ((iteration+1) % (self.apply_selection_every_iterations) == 0
                         or (iteration+1) == n_iterations):
                     selection_applied_apply_replacement = False
+
                     self._logger.info('Iteration: {}. -----------------------------Applying Replacement'.format(iteration+1))
+
                     # Evaluate fitness of new_populations against neighborhood
                     self.evaluate_fitness(new_populations[TYPE_GENERATOR], all_discriminators, fitness_samples,
                                           self.fitness_mode, splited)
@@ -250,6 +250,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     for i, individual in enumerate(local_discriminators.individuals):
                         individual.id = '{}/D{}'.format(self.neighbourhood.cell_number, i)
                         individual.iteration = iteration + 1
+
+                    del fitness_samples
+                    torch.cuda.empty_cache()
                 # else: # If there is not replacement, we update the fitness
                 #     self._logger.info(
                 #         'Iteration: {}. -----------------------------Evaluating fitness because there is not replacement'.format(iteration+1))
@@ -264,7 +267,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
             # Mutate mixture weights after selection
-            if not self.optimize_weights_at_the_end:
+            if (self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0)) and not self.optimize_weights_at_the_end:
                 self.mutate_mixture_weights_with_score(input_data)  # self.score is updated here
 
             stop_time = time()
@@ -308,7 +311,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                                            self.score, stop_time - start_time,
                                            path_real_images, path_fake_images)
 
-
+        torch.cuda.empty_cache()
         return self.result()
 
     def optimize_generator_mixture_weights(self):
@@ -478,6 +481,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 _logger.debug('     Fitness: {}'.format(individual_attacker.fitness))
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
+
 
     def mutate_mixture_weights_with_score(self, input_data):
         if self.score_calc is not None:
