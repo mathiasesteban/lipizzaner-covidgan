@@ -170,6 +170,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     self._logger.debug('Splited fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
                 self.evaluate_fitness(all_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
                 self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
+                del fitness_samples
+                pytorch.cuda.empty_cache()
                 self._logger.debug('Finished evaluating fitness')
 
                 # Tournament selection
