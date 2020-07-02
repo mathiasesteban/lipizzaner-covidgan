@@ -230,6 +230,10 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                         or (iteration+1) == n_iterations):
                     selection_applied_apply_replacement = False
 
+                    if (iteration+1) == n_iterations:
+                        all_generators = self.neighbourhood.all_generators(None)
+                        all_discriminators = self.neighbourhood.all_discriminators(None)
+
                     self._logger.info('Iteration: {}. -----------------------------Applying Replacement'.format(iteration+1))
 
                     # Evaluate fitness of new_populations against neighborhood
@@ -291,8 +295,6 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 self.save_checkpoint(all_generators.individuals, all_discriminators.individuals,
                                      self.neighbourhood.cell_number, self.neighbourhood.grid_position)
 
-        all_generators = self.neighbourhood.all_generators(None)
-        all_discriminators = self.neighbourhood.all_discriminators(None)
 
         if self.optimize_weights_at_the_end:
 
@@ -462,11 +464,11 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             for individual_defender in population_defender.individuals:
                 _logger.debug('   - Defender {}'.format(individual_attacker.id))
                 #Iterate through input
-                input_iterator = iter(input_var)
-                batch_number = 0
-                fitness_attacker_acum = 0
-                max_batches = len(input_var)
                 if splited:
+                    input_iterator = iter(input_var)
+                    batch_number = 0
+                    fitness_attacker_acum = 0
+                    max_batches = len(input_var)
                     while batch_number < max_batches: #len(input_var):
                         _input = next(input_iterator)
                         fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
@@ -474,18 +476,21 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                         batch_number += 1
                         _logger.debug('     Batch: {}/{}'.format(batch_number, max_batches))
                     fitness_attacker = fitness_attacker_acum / batch_number
-                    del _input
                 else:
                     fitness_attacker = float(individual_attacker.genome.compute_loss_against(
                         individual_defender.genome, input_var)[0])
-                    del input_var 
-                torch.cuda.empty_cache()
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
                 _logger.debug('     Fitness: {}'.format(individual_attacker.fitness))
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
+
+        if splited:
+            del _input
+            del input_iterator
+        del input_var
+        torch.cuda.empty_cache()
 
 
     def mutate_mixture_weights_with_score(self, input_data):
