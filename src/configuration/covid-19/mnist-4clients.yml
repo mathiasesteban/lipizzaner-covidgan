@@ -27,7 +27,7 @@ trainer:
       fitness_mode: average    # worse, best, average
       fitness_batch_size: 100
 dataloader:
-  dataset_name: covid
+  dataset_name: mnist
   use_batch: True
   batch_size: 100
   n_batches: 6
@@ -37,6 +37,6 @@ network:
   loss: bceloss
 master:
   calculate_score: True
-  score_sample_size: 5000                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+  score_sample_size: 5000
   cuda: True
-general: !include general-4clients.yml
+general: !include general.yml
