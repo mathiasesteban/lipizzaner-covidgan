@@ -172,6 +172,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
                 self._logger.debug('Finished evaluating fitness')
 
+                torch.cuda.empty_cache()
+
                 # Tournament selection
                 if self._enable_selection:
                     self._logger.debug('Started tournament selection')
@@ -466,15 +468,18 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 max_batches = len(input_var)
                 if splited:
                     while batch_number < max_batches: #len(input_var):
-                        input = next(input_iterator)
+                        _input = next(input_iterator)
                         fitness_attacker_acum += float(individual_attacker.genome.compute_loss_against(
-                        individual_defender.genome, input)[0])
+                        individual_defender.genome, _input)[0])
                         batch_number += 1
                         _logger.debug('     Batch: {}/{}'.format(batch_number, max_batches))
                     fitness_attacker = fitness_attacker_acum / batch_number
+                    del _input
                 else:
                     fitness_attacker = float(individual_attacker.genome.compute_loss_against(
                         individual_defender.genome, input_var)[0])
+                    del input_var 
+                torch.cuda.empty_cache()
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
