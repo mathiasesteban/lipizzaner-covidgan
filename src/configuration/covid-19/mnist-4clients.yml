@@ -6,7 +6,7 @@ trainer:
   mixture_generator_samples_mode: exact_proportion
   params:
     population_size: 1
-    tournament_size: 2
+    tournament_size: 1
     n_replacements: 1
     default_adam_learning_rate: 0.0002
     # Hyperparameter mutation
@@ -15,8 +15,8 @@ trainer:
     discriminator_skip_each_nth_step: 0
     mixture_sigma: 0.01
     enable_selection: True
-    evaluate_subpopulations_every: 2
-    subpopulation_sample_size: 3
+    evaluate_subpopulations_every: 3
+    subpopulation_sample_size: 1
     score:
       enabled: False
       type: inception_score
@@ -29,7 +29,7 @@ trainer:
 dataloader:
   dataset_name: mnist
   use_batch: True
-  batch_size: 100
+  batch_size: 50
   n_batches: 6
   shuffle: True
 network:

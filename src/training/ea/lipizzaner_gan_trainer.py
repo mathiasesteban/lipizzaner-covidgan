@@ -216,7 +216,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
             # Perform selection first before mutation of mixture_weights
             # Replace the worst with the best new
             if self._enable_selection:
-                if selection_applied_apply_replacement and ((iteration+1) % (self.apply_selection_every_iterations) == 0
+                if selection_applied_apply_replacement and ((iteration+1) % (self.evaluate_subpopulations_every) == 0
                         or (iteration+1) == n_iterations):
                     selection_applied_apply_replacement = False
 
@@ -258,7 +258,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 #                           split)
             else:
                 # Re-evaluate fitness of local_generators and local_discriminators against neighborhood
-                if (iteration+1) % (self.apply_selection_every_iterations) == 0 or (iteration+1) == n_iterations:
+                if (iteration+1) % (self.evaluate_subpopulations_every) == 0 or (iteration+1) == n_iterations:
                     self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, split)
                     self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode, split)
                     del fitness_samples
@@ -266,7 +266,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
             # Mutate mixture weights after selection
-            if (self.apply_selection_every_iterations == 0 or ((iteration) % self.apply_selection_every_iterations == 0)) and not self.optimize_weights_at_the_end:
+            if (self.evaluate_subpopulations_every == 0 or ((iteration) % self.evaluate_subpopulations_every == 0)) and not self.optimize_weights_at_the_end:
                 self.mutate_mixture_weights_with_score(input_data)  # self.score is updated here
 
             stop_time = time()
