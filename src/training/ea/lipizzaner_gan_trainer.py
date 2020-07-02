@@ -172,8 +172,6 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 self.evaluate_fitness(all_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
                 self._logger.debug('Finished evaluating fitness')
 
-                torch.cuda.empty_cache()
-
                 # Tournament selection
                 if self._enable_selection:
                     self._logger.debug('Started tournament selection')
@@ -268,8 +266,9 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 #                           splited)
             else:
                 # Re-evaluate fitness of local_generators and local_discriminators against neighborhood
-                self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
-                self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
+                if (iteration+1) % (self.apply_selection_every_iterations) == 0 or (iteration+1) == n_iterations):
+                    self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, splited)
+                    self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode, splited)
 
 
             # Mutate mixture weights after selection
