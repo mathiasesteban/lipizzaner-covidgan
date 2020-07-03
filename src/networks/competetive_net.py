@@ -200,8 +200,8 @@ class DiscriminatorNetCovid(CompetetiveNet):
 
         cc = ConfigurationContainer.instance()
         self.in_mean = cc.settings['network'].get('in_mean', 0.0)
-        self.in_std = cc.settings['network'].get('in_std', 0.05) #Configured for the 1000 first iterations
-        self.in_std_decay_rate = cc.settings['network'].get('in_std_decay_rate', 4.9999999900000004e-05)
+        self.in_std = cc.settings['network'].get('in_std', 0.05) #Configured for the 500 first iterations
+        self.in_std_decay_rate = cc.settings['network'].get('in_std_decay_rate', 1e-04)
         self.in_std_min = cc.settings['network'].get('in_std_min', 1e-10)
         self.in_fake_decay = cc.settings['network'].get('in_fake_decay', False)
         self.label_rate = cc.settings['dataloader'].get('label_rate', 1)
