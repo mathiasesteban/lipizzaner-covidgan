@@ -12,7 +12,7 @@ trainer:
     # Hyperparameter mutation
     alpha: 0.0001
     mutation_probability: 0.5
-    discriminator_skip_each_nth_step: 0
+    discriminator_skip_each_nth_step: 1
     mixture_sigma: 0.01
     enable_selection: False
     evaluate_subpopulations_every: 10
