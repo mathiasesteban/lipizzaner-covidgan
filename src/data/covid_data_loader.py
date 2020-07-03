@@ -9,7 +9,7 @@ from torch.autograd import Variable
 
 from imblearn.over_sampling import SMOTE
 
-BATCH_SIZE = 100
+BATCH_SIZE = 69 
 WIDTH = 128
 HEIGHT = 128
 GAUSSIAN_AUGMENTATION = None  # [2, 0.5, 0.001]     # None or [augmentation_times, mean, std]
