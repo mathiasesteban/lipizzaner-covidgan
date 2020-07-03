@@ -290,7 +290,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
 
         if self.optimize_weights_at_the_end:
-            all_discriminators = self.neighbourhood.all_discriminators(self.individuals_sampling_size)
+            all_generators = self.neighbourhood.all_generators(None)
+            all_discriminators = self.neighbourhood.all_discriminators(None)
             local_generators = self.neighbourhood.local_generators
             local_discriminators = self.neighbourhood.local_discriminators
 
