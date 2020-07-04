@@ -139,7 +139,7 @@ class FourLayerPerceptronFactory(NetworkFactory):
 
     def create_generator(self, parameters=None, encoded_parameters=None):
 
-        net = GeneratorNet(
+        net = GeneratorNetCovid(
             self.loss_function,
             Sequential(
                 nn.Linear(64, 256),
@@ -158,7 +158,7 @@ class FourLayerPerceptronFactory(NetworkFactory):
 
     def create_discriminator(self, parameters=None, encoded_parameters=None):
 
-        net = DiscriminatorNet(
+        net = DiscriminatorNetCovid(
             self.loss_function,
             Sequential(
                 nn.Linear(self.input_data_size, 256),

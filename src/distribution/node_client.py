@@ -8,6 +8,7 @@ from distribution.state_encoder import StateEncoder
 from helpers.configuration_container import ConfigurationContainer
 from helpers.individual import Individual
 from helpers.population import Population, TYPE_GENERATOR, TYPE_DISCRIMINATOR
+from random import sample
 
 TIMEOUT_SEC_DEFAULT = 60
 MAX_HTTP_CLIENT_THREADS = 5
@@ -26,7 +27,16 @@ class NodeClient:
         Returns when all are loaded, or raises TimeoutError when timeout is reached.
         """
         generators = self.load_generators_from_api(nodes, timeout_sec)
+        return [self._parse_individual(gen, self.network_factory.create_generator)
+                for gen in generators if self._is_json_valid(gen)]
 
+    def get_subset_of_generators(self, nodes, subset_size, timeout_sec=TIMEOUT_SEC_DEFAULT):
+        """
+        Concurrently loads a subset of the  current generator individuals from the given nodes.
+        Returns when all are loaded, or raises TimeoutError when timeout is reached.
+        """
+        generators = self.load_generators_from_api(nodes, timeout_sec)
+        generators = sample(generators, subset_size)
         return [self._parse_individual(gen, self.network_factory.create_generator)
                 for gen in generators if self._is_json_valid(gen)]
 
@@ -37,6 +47,16 @@ class NodeClient:
         """
         discriminators = self.load_discriminators_from_api(nodes, timeout_sec)
 
+        return [self._parse_individual(disc, self.network_factory.create_discriminator)
+                for disc in discriminators if self._is_json_valid(disc)]
+
+    def get_subset_of_discriminators(self, nodes, subset_size, timeout_sec=TIMEOUT_SEC_DEFAULT):
+        """
+        Concurrently loads a subset of the current discriminator individuals from the node specified by 'addresses'
+        Returns when all are loaded, or raises TimeoutError when timeout is reached.
+        """
+        discriminators = self.load_discriminators_from_api(nodes, timeout_sec)
+        discriminators = sample(discriminators, subset_size)
         return [self._parse_individual(disc, self.network_factory.create_discriminator)
                 for disc in discriminators if self._is_json_valid(disc)]
 

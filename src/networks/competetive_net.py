@@ -156,7 +156,7 @@ class DiscriminatorNet(CompetetiveNet):
         real_labels = to_pytorch_variable(torch.ones(batch_size))
         fake_labels = to_pytorch_variable(torch.zeros(batch_size))
 
-        outputs = self.net(input) #.view(-1)
+        outputs = self.net(input).view(-1)
         d_loss_real = self.loss_function(outputs, real_labels)
 
         # Compute loss using fake images
@@ -200,8 +200,8 @@ class DiscriminatorNetCovid(CompetetiveNet):
 
         cc = ConfigurationContainer.instance()
         self.in_mean = cc.settings['network'].get('in_mean', 0.0)
-        self.in_std = cc.settings['network'].get('in_std', 0.05) #Configured for the 1000 first iterations
-        self.in_std_decay_rate = cc.settings['network'].get('in_std_decay_rate', 4.9999999900000004e-05)
+        self.in_std = cc.settings['network'].get('in_std', 0.05) #Configured for the 500 first iterations
+        self.in_std_decay_rate = cc.settings['network'].get('in_std_decay_rate', 1e-04)
         self.in_std_min = cc.settings['network'].get('in_std_min', 1e-10)
         self.in_fake_decay = cc.settings['network'].get('in_fake_decay', False)
         self.label_rate = cc.settings['dataloader'].get('label_rate', 1)
@@ -226,7 +226,7 @@ class DiscriminatorNetCovid(CompetetiveNet):
 
     def compute_loss_against(self, opponent, input, training_epoch=None):
 
-        print('ITERATION: {}'.format(training_epoch))
+        #print('ITERATION: {}'.format(training_epoch))
         # If HeuristicLoss is applied in the Generator, the Discriminator applies BCELoss
         if self.loss_function.__class__.__name__ == 'MustangsLoss':
             if 'HeuristicLoss' in self.loss_function.get_applied_loss_name():
@@ -239,9 +239,11 @@ class DiscriminatorNetCovid(CompetetiveNet):
         # Adding noise to prevent Discriminator from getting too strong
         if training_epoch is not None:
             std = max(self.in_std_min, self.in_std - training_epoch * self.in_std_decay_rate)
+            #print('Perturbation with decay std: {}'.format(std)) 
         else:
             std = self.in_std
-        print('Perturbation Std: {}'.format(std))
+            #print('Perturbation without decay std: {}'.format(std))
+        #print('Perturbation Std: {}'.format(std))
         input_perturbation = to_pytorch_variable(torch.empty(input.shape).normal_(mean=self.in_mean, std=std))
         input = input + input_perturbation
 

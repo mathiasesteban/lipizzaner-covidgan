@@ -9,11 +9,13 @@ from torch.autograd import Variable
 
 from imblearn.over_sampling import SMOTE
 
-BATCH_SIZE = 10
+
+BATCH_SIZE = 69 
 WIDTH = 128
 HEIGHT = 128
 GAUSSIAN_AUGMENTATION = None  # [2, 0.5, 0.001]     # None or [augmentation_times, mean, std]
-SMOTE_AUGMENTATION = None                      # None or augmentation_times
+SMOTE_AUGMENTATION = 100                      # None or augmentation_times
+
 
 
 def gaussian_augmentation(tensor_list, labels_list, augmentation_times, mean, std):
@@ -141,7 +143,9 @@ class COVIDDataSet(Dataset):
 
         # Remuevo los ultimos elementos que no completan un batch
         reminder = len(tensor_list) % BATCH_SIZE
-        tensor_list = tensor_list[:-reminder]
+
+        if reminder > 0:
+            tensor_list = tensor_list[:-reminder]
 
         # 4) UNIFICAR LISTA EN TENSOR UNICO
         # Se conVierte la lista de tensores en un unico tensor de dimension (len(tensor_list), 1, HEIGHT, WIDTH)
