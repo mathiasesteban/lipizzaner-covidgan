@@ -32,6 +32,10 @@ dataloader:
   batch_size: 69
   n_batches: 0
   shuffle: True
+  smote_augmentation_times: 15
+  gaussian_augmentation_times: 0
+  gaussian_augmentation_mean: 0
+  gaussian_augmentation_std: 0
 network:
   name: five_layer_perceptron
   loss: bceloss
@@ -39,4 +43,4 @@ master:
   calculate_score: True
   score_sample_size: 5000
   cuda: True
-general: !include general-1clients-4.yml
+general: !include general.yml
