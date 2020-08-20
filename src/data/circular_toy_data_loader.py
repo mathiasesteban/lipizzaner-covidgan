@@ -1,16 +1,12 @@
 import numpy as np
 
 from data.data_loader import DataLoader
-from data.grid_toy_data_loader import GridToyDataSet
-
-N_RECORDS = 50000
-N_VALUES_PER_RECORD = 2
-N_MODES = 12
+from data.gaussian_2d_dataset import Gaussian2DDataSet
 
 
 class CircularToyDataLoader(DataLoader):
     """
-    A dataloader that returns samples from a simple toyproblem distribution of 5 points in a circle
+    A dataloader that returns samples from a simple toy problem 2d gaussian distributions of points in a circle
     """
 
     def __init__(self, use_batch=True, batch_size=100, n_batches=0, shuffle=False):
@@ -18,15 +14,15 @@ class CircularToyDataLoader(DataLoader):
 
     @property
     def n_input_neurons(self):
-        return N_VALUES_PER_RECORD
+        return 2
 
     def save_images(self, images, shape, filename):
         self.dataset().save_images(images, filename)
 
 
-class CircularToyDataSet(GridToyDataSet):
+class CircularToyDataSet(Gaussian2DDataSet):
 
     @staticmethod
-    def points():
-        thetas = np.linspace(0, 2 * np.pi, N_MODES)
-        return np.sin(thetas) * 4, np.cos(thetas) * 4
+    def points(number_of_modes):
+        thetas = np.linspace(0, 2 * np.pi, number_of_modes+1)[:-1]
+        return np.sin(thetas) * 10, np.cos(thetas) * 10

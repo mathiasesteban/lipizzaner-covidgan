@@ -98,9 +98,9 @@ class CircularProblemFactory(NetworkFactory):
             self.loss_function,
             Sequential(
                 nn.Linear(self.gen_input_size, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, self.input_data_size)
             ), self.gen_input_size)
 
@@ -116,9 +116,9 @@ class CircularProblemFactory(NetworkFactory):
             self.loss_function,
             Sequential(
                 nn.Linear(self.input_data_size, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 1),
                 nn.Sigmoid()),
             self.gen_input_size)

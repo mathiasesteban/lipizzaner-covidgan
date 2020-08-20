@@ -2,10 +2,12 @@ import logging
 
 from helpers.configuration_container import ConfigurationContainer
 from torchvision.datasets import ImageFolder
+
 from torchvision.transforms import ToTensor, Compose, Resize, Grayscale
 from torch.utils.data import Dataset
 from data.data_loader import DataLoader
 from torchvision.utils import save_image
+
 from PIL import Image
 import torch
 from torch.autograd import Variable
@@ -109,6 +111,9 @@ class COVIDDataSet(Dataset):
         self.gaussian_augmentation_times = settings.get('gaussian_augmentation_times', 0)
         self.gaussian_augmentation_mean = settings.get('gaussian_augmentation_mean', 0)
         self.gaussian_augmentation_std = settings.get('gaussian_augmentation_std', 0)
+
+        self.covid_type = settings.get('covid_type', 'positive')
+
         self.use_batch = settings.get('use_batch', False)
 
         self.batch_size = settings.get('batch_size', None) if self.use_batch else None
@@ -120,9 +125,11 @@ class COVIDDataSet(Dataset):
         # Se cargan las imagenes en una lista de tuplas <tensor,int> donde:
         # tensor.shape = (1, HEIGHT, WIDTH)
         # int es el indice de la clase asociada a dicho tensor
+
         transforms = [Grayscale(num_output_channels=1), Resize(size=[HEIGHT, WIDTH], interpolation=Image.NEAREST),
                       ToTensor()]
-        dataset = ImageFolder(root="datasets/covid", transform=Compose(transforms))
+        dataset = ImageFolder(root="data/datasets/covid-positive", transform=Compose(transforms))
+        print(len(dataset))
 
         # Se separan las tuplas en lista de tensores y lista de labels
         tensor_list = []
@@ -131,7 +138,6 @@ class COVIDDataSet(Dataset):
             tensor_list.append(img[0])
             labels_list.append(img[1])
 
-        self._logger.debug('Original dataset size: {}'.format(len(tensor_list)))
         print("Original dataset size: " + str(len(tensor_list)))
 
         # 2) AUGMENTATION
