@@ -1,21 +1,21 @@
+import logging
+
+from helpers.configuration_container import ConfigurationContainer
 from torchvision.datasets import ImageFolder
+
 from torchvision.transforms import ToTensor, Compose, Resize, Grayscale
 from torch.utils.data import Dataset
 from data.data_loader import DataLoader
 from torchvision.utils import save_image
+
 from PIL import Image
 import torch
 from torch.autograd import Variable
 
 from imblearn.over_sampling import SMOTE
 
-
-BATCH_SIZE = 69 
 WIDTH = 128
 HEIGHT = 128
-GAUSSIAN_AUGMENTATION = None  # [2, 0.5, 0.001]     # None or [augmentation_times, mean, std]
-SMOTE_AUGMENTATION = 100                      # None or augmentation_times
-
 
 
 def gaussian_augmentation(tensor_list, labels_list, augmentation_times, mean, std):
@@ -105,14 +105,31 @@ class COVIDDataSet(Dataset):
 
     def __init__(self, **kwargs):
 
+        self.cc = ConfigurationContainer.instance()
+        settings = self.cc.settings['dataloader']
+        self.smote_augmentation_times = settings.get('smote_augmentation_times', 0)
+        self.gaussian_augmentation_times = settings.get('gaussian_augmentation_times', 0)
+        self.gaussian_augmentation_mean = settings.get('gaussian_augmentation_mean', 0)
+        self.gaussian_augmentation_std = settings.get('gaussian_augmentation_std', 0)
+
+        self.covid_type = settings.get('covid_type', 'positive')
+
+        self.use_batch = settings.get('use_batch', False)
+
+        self.batch_size = settings.get('batch_size', None) if self.use_batch else None
+
+        self._logger = logging.getLogger(__name__)
+
         # 1) CARGAR IMAGENES DESDE EL FILESYSTEM
 
         # Se cargan las imagenes en una lista de tuplas <tensor,int> donde:
         # tensor.shape = (1, HEIGHT, WIDTH)
         # int es el indice de la clase asociada a dicho tensor
+
         transforms = [Grayscale(num_output_channels=1), Resize(size=[HEIGHT, WIDTH], interpolation=Image.NEAREST),
                       ToTensor()]
-        dataset = ImageFolder(root="datasets/covid", transform=Compose(transforms))
+        dataset = ImageFolder(root="data/datasets/covid-positive", transform=Compose(transforms))
+        print(len(dataset))
 
         # Se separan las tuplas en lista de tensores y lista de labels
         tensor_list = []
@@ -125,32 +142,35 @@ class COVIDDataSet(Dataset):
 
         # 2) AUGMENTATION
 
-        if GAUSSIAN_AUGMENTATION is not None:
+        if self.gaussian_augmentation_times != 0:
             tensor_list, labels_list = gaussian_augmentation(tensor_list,
                                                              labels_list,
-                                                             GAUSSIAN_AUGMENTATION[0],
-                                                             GAUSSIAN_AUGMENTATION[1],
-                                                             GAUSSIAN_AUGMENTATION[2])
+                                                             self.gaussian_augmentation_times,
+                                                             self.gaussian_augmentation_mean,
+                                                             self.gaussian_augmentation_std)
 
+        self._logger.debug('Dataset size after Gaussian augmentation: {}'.format(len(tensor_list)))
         print("Dataset size after Gaussian augmentation: " + str(len(tensor_list)))
 
-        if SMOTE_AUGMENTATION is not None:
-            tensor_list, labels_list = smote_augmentation(tensor_list, labels_list, SMOTE_AUGMENTATION)
+        if self.smote_augmentation_times is not None:
+            tensor_list, labels_list = smote_augmentation(tensor_list, labels_list, self.smote_augmentation_times)
 
+        self._logger.debug('Dataset size after SMOTE augmentation: {}'.format(len(tensor_list)))
         print("Dataset size after SMOTE augmentation: " + str(len(tensor_list)))
 
         # 3) REMOVER BATCH INCOMPLETO
 
         # Remuevo los ultimos elementos que no completan un batch
-        reminder = len(tensor_list) % BATCH_SIZE
-
-        if reminder > 0:
-            tensor_list = tensor_list[:-reminder]
+        if self.use_batch:
+            reminder = len(tensor_list) % self.batch_size
+            if reminder > 0:
+                tensor_list = tensor_list[:-reminder]
 
         # 4) UNIFICAR LISTA EN TENSOR UNICO
         # Se conVierte la lista de tensores en un unico tensor de dimension (len(tensor_list), 1, HEIGHT, WIDTH)
         stacked_tensor = torch.stack(tensor_list)
 
+        self._logger.debug('Final dataset shape: {}'.format(stacked_tensor.shape))
         print("Final dataset shape: " + str(stacked_tensor.shape))
 
         self.data = stacked_tensor

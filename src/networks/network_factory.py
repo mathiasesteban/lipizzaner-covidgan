@@ -98,9 +98,9 @@ class CircularProblemFactory(NetworkFactory):
             self.loss_function,
             Sequential(
                 nn.Linear(self.gen_input_size, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, self.input_data_size)
             ), self.gen_input_size)
 
@@ -116,9 +116,9 @@ class CircularProblemFactory(NetworkFactory):
             self.loss_function,
             Sequential(
                 nn.Linear(self.input_data_size, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 128),
-                nn.Tanh(),
+                nn.LeakyReLU(0.2),
                 nn.Linear(128, 1),
                 nn.Sigmoid()),
             self.gen_input_size)
@@ -139,7 +139,7 @@ class FourLayerPerceptronFactory(NetworkFactory):
 
     def create_generator(self, parameters=None, encoded_parameters=None):
 
-        net = GeneratorNetCovid(
+        net = GeneratorNet(
             self.loss_function,
             Sequential(
                 nn.Linear(64, 256),
@@ -158,7 +158,7 @@ class FourLayerPerceptronFactory(NetworkFactory):
 
     def create_discriminator(self, parameters=None, encoded_parameters=None):
 
-        net = DiscriminatorNetCovid(
+        net = DiscriminatorNet( 
             self.loss_function,
             Sequential(
                 nn.Linear(self.input_data_size, 256),
