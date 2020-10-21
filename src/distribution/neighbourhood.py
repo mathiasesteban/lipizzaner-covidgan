@@ -102,21 +102,26 @@ class Neighbourhood:
         client_nodes = self._all_nodes_on_grid()
 
         if len(client_nodes) != 1 and not is_square(len(client_nodes)):
-            raise Exception('Provide either one client node, or a square number of cells (to create a square grid).')
+            raise Exception("Provide either one client node, or a square number of cells (to create a square grid).")
 
         local_port = ClientEnvironment.port
-        matching_nodes = [node for node in client_nodes if
-                          is_local_host(node['address']) and int(node['port']) == local_port]
+        matching_nodes = [
+            node for node in client_nodes if is_local_host(node["address"]) and int(node["port"]) == local_port
+        ]
 
         if len(matching_nodes) == 1:
             dim = int(round(sqrt(len(client_nodes))))
             idx = client_nodes.index(matching_nodes[0])
-            x = idx % dim
-            y = idx // dim
+            x = idx
+            y = 0
+            # x = idx % dim
+            # y = idx // dim
             return len(client_nodes), (x, y), matching_nodes[0]
         else:
-            raise Exception('This host is not specified as client in the configuration file, '
-                            'or too many clients match the condition.')
+            raise Exception(
+                "This host is not specified as client in the configuration file, "
+                "or too many clients match the condition."
+            )
 
     def _load_cell_number(self):
         x, y = self.grid_position
