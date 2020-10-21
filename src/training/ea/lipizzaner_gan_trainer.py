@@ -154,9 +154,8 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                 self._logger.debug('Evaluating fitness')
                 # Splitting fitness_samples
                 self._logger.debug('Non-split fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
-                split = False
-                if self.fitness_batch_size is not None:
-                    split = True
+                split = self.fitness_batch_size is not None
+                if split:
                     fitness_samples = torch.split(fitness_samples, int(self.fitness_batch_size))
                     # fitness_samples = torch.split(fitness_samples, int(len(fitness_samples)/self.fitness_batch_size))
                     self._logger.debug('split fitness samples size: {}. {}'.format(len(fitness_samples), fitness_samples[0].size()))
@@ -248,7 +247,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                         individual.iteration = iteration + 1
 
                     del fitness_samples
-                    torch.cuda.empty_cache()
+                    if torch.cuda.is_available(): torch.cuda.empty_cache()
                 # else: # If there is not replacement, we update the fitness
                 #     self._logger.info(
                 #         'Iteration: {}. -----------------------------Evaluating fitness because there is not replacement'.format(iteration+1))
@@ -262,7 +261,7 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
                     self.evaluate_fitness(local_generators, all_discriminators, fitness_samples, self.fitness_mode, split)
                     self.evaluate_fitness(local_discriminators, all_generators, fitness_samples, self.fitness_mode, split)
                     del fitness_samples
-                    torch.cuda.empty_cache()
+                    if torch.cuda.is_available(): torch.cuda.empty_cache()
 
 
             # Mutate mixture weights after selection
@@ -476,15 +475,15 @@ class LipizzanerGANTrainer(EvolutionaryAlgorithmTrainer):
 
                 individual_attacker.fitness = compare_fitness(fitness_attacker, individual_attacker.fitness,
                                                               fitness_mode)
-                _logger.debug('     Fitness: {}'.format(individual_attacker.fitness))
             if fitness_mode == 'average':
                 individual_attacker.fitness /= len(population_defender.individuals)
+            _logger.debug('     Fitness: {}'.format(individual_attacker.fitness))
 
         if split:
             del _input
             del input_iterator
         del input_var
-        torch.cuda.empty_cache()
+        if torch.cuda.is_available(): torch.cuda.empty_cache()
 
 
     def mutate_mixture_weights_with_score(self, input_data):

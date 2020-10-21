@@ -140,17 +140,17 @@ class COVIDDataSet(Dataset):
 
         print("Original dataset size: " + str(len(tensor_list)))
 
-        # 2) AUGMENTATION
-
-        if self.gaussian_augmentation_times != 0:
-            tensor_list, labels_list = gaussian_augmentation(tensor_list,
-                                                             labels_list,
-                                                             self.gaussian_augmentation_times,
-                                                             self.gaussian_augmentation_mean,
-                                                             self.gaussian_augmentation_std)
-
-        self._logger.debug('Dataset size after Gaussian augmentation: {}'.format(len(tensor_list)))
-        print("Dataset size after Gaussian augmentation: " + str(len(tensor_list)))
+        # # 2) AUGMENTATION
+        #
+        # if self.gaussian_augmentation_times != 0:
+        #     tensor_list, labels_list = gaussian_augmentation(tensor_list,
+        #                                                      labels_list,
+        #                                                      self.gaussian_augmentation_times,
+        #                                                      self.gaussian_augmentation_mean,
+        #                                                      self.gaussian_augmentation_std)
+        #
+        # self._logger.debug('Dataset size after Gaussian augmentation: {}'.format(len(tensor_list)))
+        # print("Dataset size after Gaussian augmentation: " + str(len(tensor_list)))
 
         if self.smote_augmentation_times is not None:
             tensor_list, labels_list = smote_augmentation(tensor_list, labels_list, self.smote_augmentation_times)

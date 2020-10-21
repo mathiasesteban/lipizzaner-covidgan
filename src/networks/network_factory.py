@@ -378,7 +378,6 @@ class ConvolutionalGrayscale64x64(NetworkFactory):
 
 
 class ConvolutionalGrayscale128x128(NetworkFactory):
-
     complexity = 128
 
     @property
