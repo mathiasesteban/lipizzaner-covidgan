@@ -50,12 +50,12 @@ class Neighbourhood:
     def all_generators(self, sampling_size=None):
         neighbour_individuals = self.node_client.get_all_generators(self.neighbours)
         local_population = self.local_generators
-        individuals = neighbour_individuals + local_population.individuals
-        if sampling_size is not None and False:
-            individuals = sample(individuals, sampling_size)
-        return Population(individuals=individuals,
-                          default_fitness=local_population.default_fitness,
-                          population_type=TYPE_GENERATOR)
+
+        return Population(
+            individuals=neighbour_individuals + local_population.individuals,
+            default_fitness=local_population.default_fitness,
+            population_type=TYPE_GENERATOR,
+        )
 
     @property
     def best_generators(self):
@@ -71,12 +71,12 @@ class Neighbourhood:
     def all_discriminators(self, sampling_size=None):
         neighbour_individuals = self.node_client.get_all_discriminators(self.neighbours)
         local_population = self.local_discriminators
-        individuals = neighbour_individuals + local_population.individuals
-        if sampling_size is not None and False:
-            individuals = sample(individuals, sampling_size)
-        return Population(individuals=individuals,
-                          default_fitness=local_population.default_fitness,
-                          population_type=TYPE_DISCRIMINATOR)
+
+        return Population(
+            individuals=neighbour_individuals + local_population.individuals,
+            default_fitness=local_population.default_fitness,
+            population_type=TYPE_DISCRIMINATOR,
+        )
 
     @property
     def all_generator_parameters(self):
