@@ -51,7 +51,7 @@ class Neighbourhood:
         neighbour_individuals = self.node_client.get_all_generators(self.neighbours)
         local_population = self.local_generators
         individuals = neighbour_individuals + local_population.individuals
-        if sampling_size is not None:
+        if sampling_size is not None and False:
             individuals = sample(individuals, sampling_size)
         return Population(individuals=individuals,
                           default_fitness=local_population.default_fitness,
@@ -72,7 +72,7 @@ class Neighbourhood:
         neighbour_individuals = self.node_client.get_all_discriminators(self.neighbours)
         local_population = self.local_discriminators
         individuals = neighbour_individuals + local_population.individuals
-        if sampling_size is not None:
+        if sampling_size is not None and False:
             individuals = sample(individuals, sampling_size)
         return Population(individuals=individuals,
                           default_fitness=local_population.default_fitness,
