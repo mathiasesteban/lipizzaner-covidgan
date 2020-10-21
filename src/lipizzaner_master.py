@@ -157,6 +157,218 @@ class LipizzanerMaster:
             exit(return_code)
 
     def _gather_results(self):
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+
+        self._logger.info("Collecting results from clients...")
+
+        # Initialize node client
+        dataloader = self.cc.create_instance(self.cc.settings["dataloader"]["dataset_name"])
+        network_factory = self.cc.create_instance(self.cc.settings["network"]["name"], dataloader.n_input_neurons)
+        node_client = NodeClient(network_factory)
+        db_logger = DbLogger()
+
+        results = node_client.gather_results(self.cc.settings["general"]["distribution"]["client_nodes"], 120)
+
+        scores = []
+        for (node, generator_pop, discriminator_pop, weights_generator, weights_discriminator) in results:
+            node_name = "{}:{}".format(node["address"], node["port"])
+            try:
+                output_dir = self.get_and_create_output_dir(node)
+
+                for generator in generator_pop.individuals:
+                    source = generator.source.replace(":", "-")
+                    filename = "{}{}.pkl".format(GENERATOR_PREFIX, source)
+                    torch.save(
+                        generator.genome.net.state_dict(), os.path.join(output_dir, "generator-{}.pkl".format(source))
+                    )
+
+                    with open(os.path.join(output_dir, "mixture.yml"), "a") as file:
+                        file.write("{}: {}\n".format(filename, weights_generator[generator.source]))
+
+                for discriminator in discriminator_pop.individuals:
+                    source = discriminator.source.replace(":", "-")
+                    filename = "{}{}.pkl".format(DISCRIMINATOR_PREFIX, source)
+                    torch.save(discriminator.genome.net.state_dict(), os.path.join(output_dir, filename))
+
+                # Save images
+                dataset = MixedGeneratorDataset(
+                    generator_pop,
+                    weights_generator,
+                    self.cc.settings["master"]["score_sample_size"],
+                    self.cc.settings["trainer"]["mixture_generator_samples_mode"],
+                )
+                image_paths = self.save_samples(dataset, output_dir, dataloader)
+                self._logger.info(
+                    "Saved mixture result images of client {} to target directory {}.".format(node_name, output_dir)
+                )
+
+                # Calculate inception or FID score
+                score = float("-inf")
+                generators_to_be_optimized = None
+                best_score = None
+                if self.cc.settings["master"]["calculate_score"]:
+                    calc = ScoreCalculatorFactory.create()
+                    self._logger.info("Score calculator: {}".format(type(calc).__name__))
+                    self._logger.info(
+                        "Calculating score score of {}. Depending on the type, this may take very long.".format(
+                            node_name
+                        )
+                    )
+
+                    score = calc.calculate(dataset)
+                    self._logger.info(
+                        "Node {} with weights {} yielded a score of {}".format(node_name, weights_generator, score)
+                    )
+                    scores.append((node, score))
+
+                    if best_score is None or (best_score is not None and score[0] < best_score):
+                        best_score = score[0]
+                        generators_to_be_optimized = generator_pop
+                        weights_generator_to_be_optimized = weights_generator
+
+                if db_logger.is_enabled and self.experiment_id is not None:
+                    db_logger.add_experiment_results(self.experiment_id, node_name, image_paths, score)
+            except Exception as ex:
+                self._logger.error("An error occured while trying to gather results from {}: {}".format(node_name, ex))
+                traceback.print_exc()
+
+        if self.cc.settings["master"]["calculate_score"] and scores:
+            best_node = sorted(scores, key=lambda x: x[1], reverse=ScoreCalculatorFactory.create().is_reversed)[-1]
+            self._logger.info(
+                "Best result: {}:{} = {}".format(best_node[0]["address"], best_node[0]["port"], best_node[1])
+            )
+
+        # Save images
+        dataset = MixedGeneratorDataset(
+            generators_to_be_optimized,
+            weights_generator_to_be_optimized,
+            self.cc.settings["master"]["score_sample_size"],
+            self.cc.settings["trainer"]["mixture_generator_samples_mode"],
+        )
+
+        self._logger.info("-------------------------------------------------------------------")
+        self._logger.info("-------------------------------------------------------------------")
+        generators = generators_to_be_optimized
+        weights_generators = weights_generator_to_be_optimized
+        population_size = len(weights_generator_to_be_optimized)
+        generations = 200
+        score_sample_size = self.cc.settings["master"]["score_sample_size"]
+        mixture_generator_samples_mode = self.cc.settings["trainer"]["mixture_generator_samples_mode"]
+        mixture_sigma = self.cc.settings["trainer"]["params"]["mixture_sigma"]
+        es_random_init = False
+        self.optimize_generator_mixture_weights(
+            generators,
+            weights_generators,
+            population_size,
+            generations,
+            score_sample_size,
+            mixture_generator_samples_mode,
+            mixture_sigma,
+            es_random_init,
+        )
+
+    def optimize_generator_mixture_weights(
+        self,
+        generators,
+        weights_generators,
+        population_size,
+        generations,
+        score_sample_size,
+        mixture_generator_samples_mode,
+        mixture_sigma,
+        es_random_init=False,
+    ):
+
+        from helpers.pytorch_helpers import noise
+        import numpy as np
+        from collections import OrderedDict
+
+        # Not necessary for single-cell grids, as mixture must always be [1]
+        if population_size == 1:
+            return
+
+        # Create random vector from latent space
+        z_noise = noise(score_sample_size, generators.individuals[0].genome.data_size)
+
+        # Include option to start from random weights
+        if es_random_init:
+            aux_weights = np.random.rand(len(weights_generators))
+            aux_weights /= np.sum(aux_weights)
+            weights_generators = OrderedDict(zip(weights_generators.keys(), aux_weights))
+            weights_generators = weights_generators
+
+        dataset = MixedGeneratorDataset(
+            generators,
+            weights_generators,
+            score_sample_size,
+            mixture_generator_samples_mode,
+            z_noise,
+        )
+
+        score_calc = ScoreCalculatorFactory.create()
+        self._logger.info("Score calculator: {}".format(type(score_calc).__name__))
+        self._logger.info(
+            "Calculating score score of {}. Depending on the type, this may take very long.".format(weights_generators)
+        )
+
+        score = score_calc.calculate(dataset)[0]
+        init_score = score
+
+        self._logger.info("Mixture weight mutation - Starting mixture weights optimization ...")
+        self._logger.info("Init score: {}\tInit weights: {}.".format(init_score, weights_generators))
+
+        for g in range(generations):
+
+            # Mutate mixture weights
+            z = np.random.normal(loc=0, scale=mixture_sigma, size=len(weights_generators))
+            transformed = np.asarray([value for _, value in weights_generators.items()])
+            transformed += z
+
+            # Don't allow negative values, normalize to sum of 1.0
+            transformed = np.clip(transformed, 0, None)
+            transformed /= np.sum(transformed)
+            new_mixture_weights = OrderedDict(zip(weights_generators.keys(), transformed))
+
+            # TODO: Testing the idea of not generating the images again
+            dataset = MixedGeneratorDataset(
+                generators,
+                new_mixture_weights,
+                score_sample_size,
+                mixture_generator_samples_mode,
+                z_noise,
+            )
+
+            if score_calc is not None:
+                score_after_mutation, tvd_after_mutation = score_calc.calculate(dataset)
+                self._logger.info(
+                    "Mixture weight mutation - Generation: {} \tScore of new weights: {} - TVD after mutation: {}\tNew weights: {}.".format(
+                        g, score_after_mutation, tvd_after_mutation, new_mixture_weights
+                    )
+                )
+
+                # For fid the lower the better, for inception_score, the higher the better
+                if (score_after_mutation < score and score_calc.is_reversed) or (
+                    score_after_mutation > score and (not score_calc.is_reversed)
+                ):
+                    weights_generators = new_mixture_weights
+                    score = score_after_mutation
+                    tvd = tvd_after_mutation
+                    self._logger.info(
+                        "NEW MIXTURE - Generation: {} \tNew score: {} - tNew TVD: \tWeights changed to: {}.".format(
+                            g, score, tvd, weights_generators
+                        )
+                    )
+        mixture_weights_generators = weights_generators
+
+        self._logger.info(
+            "Mixture weight mutation - Score before mixture weight optimzation: {}\tScore after mixture weight optimzation: {} - TVD: {}".format(
+                init_score, score, tvd
+            )
+        )
+        return mixture_weights_generators
+
+    def _gather_results_old(self):
         self._logger.info('Collecting results from clients...')
 
         # Initialize node client
