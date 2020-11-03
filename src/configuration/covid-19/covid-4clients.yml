@@ -29,9 +29,10 @@ trainer:
 dataloader:
   dataset_name: covid
   use_batch: True
-  batch_size: 10
-  n_batches: 6
+  batch_size: 69
+  n_batches: 0
   shuffle: True
+  smote_augmentation_times: 15
 network:
   name: convolutional_grayscale128x128
   loss: bceloss

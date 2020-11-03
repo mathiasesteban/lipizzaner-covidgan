@@ -30,8 +30,9 @@ dataloader:
   dataset_name: covid
   use_batch: True
   batch_size: 69
-  n_batches: 0
+  n_batches: 2
   shuffle: True
+  smote_augmentation_times: 15
 network:
   name: convolutional_grayscale128x128
   loss: bceloss

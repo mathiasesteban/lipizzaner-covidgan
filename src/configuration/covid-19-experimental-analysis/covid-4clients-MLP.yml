@@ -32,6 +32,7 @@ dataloader:
   batch_size: 69
   n_batches: 0
   shuffle: True
+  smote_augmentation_times: 36
 network:
   name: five_layer_perceptron
   loss: bceloss
