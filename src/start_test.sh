@@ -6,20 +6,55 @@ sleep_time=2
 array=()
 
 # Start the silent client processes
-for ((i=0;i<$num_processes-1;i++))
+for ((i=0;i<3;i++))
 do
-  sleep $sleep_time ; python main.py train --distributed --client > /dev/null 2>&1 &
+  sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --client > /dev/null 2>&1 &
   array+=($!)
   echo $i
 done
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --client &
+echo $i
 
-# Open up a single process to see the output from
-sleep $sleep_time ; python main.py train --distributed --client &
-array+=($!)
-echo $(($num_processes - 1))
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
 
-# Kill all the processes once a key is entered into the terminal
-read -p "Press Enter to Quit. "
-for i in "${array[@]}"; do
-  kill -9 $i
+sleep 300
+
+# Start the silent client processes
+for ((i=0;i<3;i++))
+do
+  sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --client > /dev/null 2>&1 &
+  array+=($!)
+  echo $i
 done
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --client &
+echo $i
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
+sleep 300
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
+sleep 300
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
+sleep 300
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
+sleep 300
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP.yml &
+sleep 300
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-4clients-MLP-2.yml
+
+
+sleep 60 ; CUDA_VISIBLE_DEVICES=0 python main.py train --distributed --client &
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
+sleep $sleep_time ; CUDA_VISIBLE_DEVICES=1 python main.py train --distributed --master -f configuration/euro-gp2020/covid-9clients-MLP.yml
