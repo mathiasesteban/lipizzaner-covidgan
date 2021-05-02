@@ -1,4 +1,5 @@
 import logging
+import pathlib
 
 from helpers.configuration_container import ConfigurationContainer
 from torchvision.datasets import ImageFolder
@@ -126,9 +127,9 @@ class COVIDDataSet(Dataset):
         # tensor.shape = (1, HEIGHT, WIDTH)
         # int es el indice de la clase asociada a dicho tensor
 
-        transforms = [Grayscale(num_output_channels=1), Resize(size=[HEIGHT, WIDTH], interpolation=Image.NEAREST),
-                      ToTensor()]
-        dataset = ImageFolder(root="data/datasets/covid-positive", transform=Compose(transforms))
+        transforms = [Grayscale(num_output_channels=1), Resize(size=[HEIGHT, WIDTH], interpolation=Image.NEAREST), ToTensor()]
+        file_path = str(pathlib.Path(__file__).parent.absolute())
+        dataset = ImageFolder(root=file_path + "/datasets/covid-positive", transform=Compose(transforms))
         print(len(dataset))
 
         # Se separan las tuplas en lista de tensores y lista de labels

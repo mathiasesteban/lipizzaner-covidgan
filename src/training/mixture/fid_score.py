@@ -30,6 +30,9 @@ from training.mixture.fid_mnist import MNISTCnn
 from training.mixture.fid_inception import InceptionV3
 from training.mixture.score_calculator import ScoreCalculator
 
+import pathlib
+
+
 
 class FIDCalculator(ScoreCalculator):
 
@@ -66,7 +69,8 @@ class FIDCalculator(ScoreCalculator):
         model = None
         if self.cc.settings['dataloader']['dataset_name'] == 'mnist':    # Gray dataset
             model = MNISTCnn()
-            model.load_state_dict(torch.load('./output/networks/mnist_cnn.pkl'))
+            file_path = str(pathlib.Path(__file__).parent.absolute())
+            model.load_state_dict(torch.load(file_path + '/../../ensemble_optimization/output/networks/mnist_cnn.pkl'))
             compute_label_freqs = True
         else:    # Other RGB dataset
             block_idx = InceptionV3.BLOCK_INDEX_BY_DIM[self.dims]

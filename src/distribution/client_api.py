@@ -172,6 +172,7 @@ class ClientAPI:
             ClientAPI.is_finished = True
             ClientAPI._logger.critical('An unhandled error occured while running Lipizzaner: {}'.format(ex))
             # Flask 1.0.2 does not print the stack trace of exceptions anymore
+            ClientAPI._logger.critical('An unhandled error occured while running Lipizzaner: {}'.format(traceback.print_stack()))
             traceback.print_exc()
             raise ex
         finally:
